@@ -46,13 +46,13 @@ def main():
     slides_pdf(ROOT / "presentation/CampusShield_Presentation.pptx", SUB / "CampusShield_Slides.pdf")
     copy(ROOT / "presentation/speaker_script.md", SUB / "Demo_and_Speaker_Script.md")
     for png in sorted((ROOT / "evidence/screenshots").glob("*.png")):
-        copy(png, SUB / "screenshots" / png.name)
+        copy(png, SUB / "img" / png.name)
     for png in sorted((ROOT / "evidence/kali").glob("*.png")) if (ROOT / "evidence/kali").exists() else []:
-        copy(png, SUB / "screenshots" / ("kali_" + png.name if not png.name.startswith("kali") else png.name))
+        copy(png, SUB / "img" / ("kali_" + png.name if not png.name.startswith("kali") else png.name))
     for extra in ("evidence/steganography/cover_vs_stego.png", "evidence/privacy/k_anonymity_before_after.png"):
-        copy(ROOT / extra, SUB / "screenshots" / Path(extra).name)
+        copy(ROOT / extra, SUB / "img" / Path(extra).name)
     for png in sorted((ROOT / "diagrams").glob("*.png")):
-        copy(png, SUB / "diagrams" / png.name)
+        copy(png, SUB / "img" / png.name)
     zip_path = SUB / "CampusShield_Source.zip"
     subprocess.run(["git", "archive", "--format=zip", "--prefix=BCS303-CampusShield/", "-o", str(zip_path), "HEAD"],
                    cwd=ROOT, check=True)
