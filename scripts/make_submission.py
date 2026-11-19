@@ -53,6 +53,9 @@ def main():
         copy(ROOT / extra, SUB / "img" / Path(extra).name)
     for png in sorted((ROOT / "diagrams").glob("*.png")):
         copy(png, SUB / "img" / png.name)
+    for media in sorted((ROOT / "docs/media").glob("*")):          # README media: renders of Kali output + GIFs
+        if media.suffix in (".png", ".gif") and not media.name.startswith("slide-"):
+            copy(media, SUB / "img" / media.name)
     zip_path = SUB / "CampusShield_Source.zip"
     subprocess.run(["git", "archive", "--format=zip", "--prefix=BCS303-CampusShield/", "-o", str(zip_path), "HEAD"],
                    cwd=ROOT, check=True)
