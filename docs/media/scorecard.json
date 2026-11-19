@@ -1,0 +1,11 @@
+[
+  ["SQL injection", "360 rows of all 20 students + 5 password hashes", "Parameterised SQL + allow-list", "0 rows leaked; normal query still returns 6"],
+  ["Reflected XSS", "Script from a link ran in the registrar's browser", "Auto-escaping, CSP, X-Frame-Options", "Shown as text; nothing runs"],
+  ["Passwords", "7 of 12 cracked in 0.003 s; identical hashes", "PBKDF2-600k + random salt, policy", "Unique hashes; ~333,878x slower guessing"],
+  ["Online guessing", "Unlimited attempts", "Lockout after 5 failures (15 min)", "Correct password refused while locked"],
+  ["Network exposure", "5000 + 8000 open to the untrusted zone; SQLi returned 360 rows from there", "Remove :8000 + iptables staff-only rule", "Untrusted zone: all 65,535 ports filtered; staff zone: only 5000"],
+  ["OS permissions", "DB 666: cs_student read all 20 records", "cs_app owner, groups, 640/750", "cs_student denied; only cs_audit reads logs"],
+  ["Traffic", "Login form fields readable in the HTTP capture", "TLS (self-signed in the lab)", "TLS 1.3 only; 0 readable requests"],
+  ["Monitoring", "No alerts", "Failed-login detector", "Brute force and spray alerted (slow attack missed)"],
+  ["Privacy", "100% of records unique on quasi-identifiers", "Suppression, HMAC pseudonyms, generalisation", "0% unique, k = 2, max risk 50%"]
+]

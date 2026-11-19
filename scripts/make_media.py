@@ -223,7 +223,9 @@ def evidence_media():
         k = "evidence/kali/"
         if (ROOT / k / "SUMMARY.txt").exists():
             render_terminal(page, k + "03_nmap_before.txt",
-                            pick(k + "03_nmap_before.txt", r"^(\$ ip netns exec cs_untrusted nmap -Pn -sS|PORT|[0-9]+/tcp|Nmap done|Not shown)", 14),
+                            pick(k + "03_nmap_before.txt", r"^(\$ ip netns exec cs_untrusted nmap -n -Pn -sS|PORT|[0-9]+/tcp|Nmap done|Not shown)", 5)
+                            + ["", "# read-only NSE scripts on the two web ports:"]
+                            + pick(k + "03_nmap_before.txt", r"^\|", 12),
                             "nmap-before.png")
             render_terminal(page, k + "07_nmap_after.txt",
                             pick(k + "07_nmap_after.txt", r"^(\$ ip netns exec cs_\w+ nmap|PORT|[0-9]+/tcp|Nmap done|Not shown|All [0-9]+ scanned)", 16),
@@ -234,19 +236,20 @@ def evidence_media():
             render_terminal(page, k + "05_linux_permissions.txt",
                             pick(k + "05_linux_permissions.txt", r"^(-rw|drw|=>|[0-9]+$|.*Permission denied|BEFORE|AFTER)", 30),
                             "linux-permissions.png")
-            render_terminal(page, k + "10_traffic_capture.txt",
-                            pick(k + "10_traffic_capture.txt", r"^(\$ tshark -r|frame\.number|[0-9]+\s+10\.|HTTP requests readable|10\.10\.60)", 22),
+            render_terminal(page, k + "10c_capture_decode.txt",
+                            pick(k + "10c_capture_decode.txt", r"^(\$ tshark|frame\.number|[0-9]+\s+10\.|HTTP requests|\(0x)", 24),
                             "traffic-capture.png")
             render_terminal(page, k + "11_monitoring.txt",
-                            pick(k + "11_monitoring.txt", r"attempt|ALERT|ACCOUNT_LOCKED events|failed logins found|DROP", 16),
+                            pick(k + "11_monitoring.txt", r"^attempt|LOGIN_FAILED|ACCOUNT_LOCKED|^\$ bash|ALERT|failed logins found", 24),
                             "kali-monitoring-alert.png")
         render_terminal(page, "evidence/monitoring/detect_app_log_output.txt",
-                        pick("evidence/monitoring/detect_app_log_output.txt", None, 19), "monitoring-alerts.png")
+                        [l for l in pick("evidence/monitoring/detect_app_log_output.txt", None, 19)
+                         if not l.startswith("run at")], "monitoring-alerts.png")   # hostname line left out
         br.close()
 
 
 HERO_HTML = """<!doctype html><html><head><meta charset="utf-8"><style>
-body{{margin:0}} #h{{width:1600px;height:720px;background:#14213d;position:relative;overflow:hidden;font-family:Segoe UI,Arial}}
+body{{margin:0}} #h{{width:1600px;height:590px;background:#14213d;position:relative;overflow:hidden;font-family:Segoe UI,Arial}}
 .t{{position:absolute;left:70px;top:90px;color:#fff}} h1{{font:700 84px Cambria,Georgia,serif;margin:0}}
 .sub{{font-size:28px;color:#cfd8e6;margin:12px 0 40px}}
 .stat{{display:flex;gap:26px}} .s{{background:#1f2f52;border-radius:14px;padding:16px 20px;width:150px}}
@@ -254,7 +257,7 @@ body{{margin:0}} #h{{width:1600px;height:720px;background:#14213d;position:relat
 .r{{color:#ff8a8a}} .g{{color:#6fd3c4}}
 .pill{{display:inline-block;border-radius:18px;padding:7px 16px;font-weight:700;font-size:17px;margin-right:10px;color:#fff}}
 img{{position:absolute;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.45)}}
-.foot{{position:absolute;left:70px;bottom:40px;color:#8d99ae;font-size:16px}}
+.foot{{position:absolute;left:70px;bottom:34px;color:#8d99ae;font-size:16px}}
 </style></head><body><div id="h"><div class="t"><h1>CampusShield</h1>
 <div class="sub">Attack &middot; defend &middot; verify &mdash; a BCS303 security lab</div>
 <span class="pill" style="background:#c1121f">vulnerable build</span><span class="pill" style="background:#2a9d8f">secure build</span>
@@ -285,8 +288,9 @@ def extras(score_rows):
     with sync_playwright() as p:
         br = p.chromium.launch(channel="msedge")
         page = br.new_page(viewport={"width": 1600, "height": 720})
-        page.set_content(HERO_HTML.format(a=(MEDIA / "registrar-students.png").as_uri(),
-                                          b=(MEDIA / "sqli-before-after.png").as_uri()))
+        import base64
+        uri = lambda f: "data:image/png;base64," + base64.b64encode((MEDIA / f).read_bytes()).decode()  # noqa: E731
+        page.set_content(HERO_HTML.format(a=uri("registrar-students.png"), b=uri("sqli-before-after.png")))
         page.wait_for_timeout(300)
         page.locator("#h").screenshot(path=str(MEDIA / "campusshield-overview.png"))
         rows = "".join(f'<tr><td class="k">{html.escape(a)}</td><td class="b">{html.escape(b)}</td>'
