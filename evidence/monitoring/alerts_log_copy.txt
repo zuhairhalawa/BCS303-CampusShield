@@ -1,0 +1,8 @@
+2026-11-20T02:19:35 ALERT BRUTE_FORCE ip=10.10.50.66 failures=8 between 2026-11-20T10:15:00 and 2026-11-20T10:16:45 users=s2026002 source_log=monitoring/sample_logs/campushield_synthetic.log
+2026-11-20T02:19:35 ALERT PASSWORD_SPRAY ip=10.10.50.77 distinct_users=4 users=admin1 registrar1 s2026001 bob source_log=monitoring/sample_logs/campushield_synthetic.log
+2026-11-20T02:19:35 ALERT BRUTE_FORCE ip=10.10.50.66 failures=6 between Nov 20 14:20:00 and Nov 20 14:20:40 users=root source_log=monitoring/sample_logs/auth_synthetic.log
+2026-11-20T02:19:35 ALERT PASSWORD_SPRAY ip=10.10.50.99 distinct_users=3 users=test oracle guest source_log=monitoring/sample_logs/auth_synthetic.log
+2026-11-20T02:19:42 ALERT BRUTE_FORCE ip=10.10.50.66 failures=8 between 2026-11-20T10:15:00 and 2026-11-20T10:16:45 users=s2026002 source_log=monitoring/sample_logs/campushield_synthetic.log
+2026-11-20T02:19:42 ALERT BRUTE_FORCE ip=10.10.50.77 failures=4 between 2026-11-20T11:02:10 and 2026-11-20T11:05:10 users=admin1 registrar1 s2026001 bob source_log=monitoring/sample_logs/campushield_synthetic.log
+2026-11-20T02:19:42 ALERT PASSWORD_SPRAY ip=10.10.50.77 distinct_users=4 users=admin1 registrar1 s2026001 bob source_log=monitoring/sample_logs/campushield_synthetic.log
+2026-11-20T02:19:42 ALERT BRUTE_FORCE ip=10.10.50.88 failures=4 between 2026-11-20T12:00:00 and 2026-11-20T13:00:00 users=registrar1 source_log=monitoring/sample_logs/campushield_synthetic.log

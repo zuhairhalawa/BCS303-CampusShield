@@ -1,0 +1,25 @@
+full_name,student_id,email,date_of_birth,gender,nationality,home_area,programme,year,gpa,scholarship
+Omar Haddad,S2026101,omar.haddad@student.campushield.test,2002-09-01,M,Jordanian,Muwaileh,BSc Information Systems,1,3.77,need-based
+Lina Khalil,S2026102,lina.khalil@student.campushield.test,2005-06-26,F,Egyptian,Al Khan,BSc Information Systems,4,3.5,merit
+Yousef Nasser,S2026103,yousef.nasser@student.campushield.test,2003-05-07,M,Emirati,Dubai Marina,BSc Computer Science,1,2.9,need-based
+Maya Saleh,S2026104,maya.saleh@student.campushield.test,2005-11-04,F,Egyptian,Al Barsha,BSc Computer Science,3,2.7,sports
+Karim Rahman,S2026105,karim.rahman@student.campushield.test,2004-01-01,M,Indian,Muwaileh,BSc Information Systems,1,3.45,none
+Sara Aziz,S2026106,sara.aziz@student.campushield.test,2005-01-06,F,Emirati,Mirdif,BSc Information Systems,3,2.05,merit
+Hadi Farouk,S2026107,hadi.farouk@student.campushield.test,2004-01-15,M,Egyptian,Dubai Marina,BSc Information Systems,4,3.73,none
+Nour Mansour,S2026108,nour.mansour@student.campushield.test,2005-05-14,F,Indian,Jumeirah,BSc Information Systems,3,3.69,merit
+Rami Qasim,S2026109,rami.qasim@student.campushield.test,2004-09-08,M,Egyptian,Al Khan,BSc Information Systems,2,3.53,need-based
+Dana Darwish,S2026110,dana.darwish@student.campushield.test,2005-12-14,F,Egyptian,Al Nahda (Sharjah),BSc Information Systems,4,2.94,none
+Tariq Hamdan,S2026111,tariq.hamdan@student.campushield.test,2003-04-14,M,Indian,Deira,BSc Information Systems,4,3.35,merit
+Leila Yassin,S2026112,leila.yassin@student.campushield.test,2005-01-22,F,Emirati,Jumeirah,BSc Computer Science,4,3.61,none
+Samir Barakat,S2026113,samir.barakat@student.campushield.test,2003-02-19,M,Emirati,Al Barsha,BSc Cybersecurity,2,3.31,merit
+Hana Sabri,S2026114,hana.sabri@student.campushield.test,2004-07-27,F,Indian,Muwaileh,BSc Computer Science,2,2.52,none
+Faris Jaber,S2026115,faris.jaber@student.campushield.test,2004-11-13,M,Indian,Mirdif,BSc Computer Science,1,3.66,none
+Rania Hijazi,S2026116,rania.hijazi@student.campushield.test,2002-07-21,F,Jordanian,Al Majaz,BSc Information Systems,3,2.91,sports
+Adam Shami,S2026117,adam.shami@student.campushield.test,2004-05-21,M,Indian,Mirdif,BSc Cybersecurity,3,3.81,none
+Zainab Amin,S2026118,zainab.amin@student.campushield.test,2003-02-03,F,Syrian,Jumeirah,BSc Computer Science,1,2.18,none
+Bilal Toukan,S2026119,bilal.toukan@student.campushield.test,2005-01-24,M,Pakistani,Dubai Marina,BSc Cybersecurity,2,2.24,none
+Aisha Odeh,S2026120,aisha.odeh@student.campushield.test,2005-01-24,F,Moroccan,Al Nahda (Sharjah),BSc Information Systems,3,2.31,none
+Khalid Masri,S2026121,khalid.masri@student.campushield.test,2005-04-09,M,Egyptian,Muwaileh,BSc Computer Science,2,3.09,none
+Mariam Kanaan,S2026122,mariam.kanaan@student.campushield.test,2002-09-26,F,Moroccan,Muwaileh,BSc Information Systems,3,2.17,merit
+Ziad Issa,S2026123,ziad.issa@student.campushield.test,2002-10-05,M,Indian,Muwaileh,BSc Computer Science,4,2.78,none
+Huda Zaher,S2026124,huda.zaher@student.campushield.test,2003-02-07,F,Jordanian,Muwaileh,BSc Computer Science,1,2.1,none

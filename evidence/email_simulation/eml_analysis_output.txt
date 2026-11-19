@@ -1,0 +1,38 @@
+Analysing spoofed_notice.eml (offline, synthetic sample - never sent)
+X-Lab-Note: BCS303 CampusShield phishing-awareness training sample. Never sent. Synthetic content, reserved .test domains only.
+
+1. Sender identity
+  apparent sender (display name): CUD IT Service Desk
+  real From address             : it-support@campushie1d-support.test
+  Return-Path (envelope) domain : bulk-mailer.test
+  Reply-To domain               : helpdesk-verify.test
+  [!] display name claims to be university IT but the address domain is campushie1d-support.test, not campushield.test
+  [!] From domain (campushie1d-support.test) differs from Return-Path domain (bulk-mailer.test) - SPF checks the Return-Path, not what the user sees
+  [!] replies would go to a third domain (helpdesk-verify.test)
+
+2. Lookalike (typosquatting) check against campushield.test
+  bulk-mailer.test: no lookalike pattern (distance 9)
+  [!] campushie1d-support.test: 'campushie1d' becomes 'campushield' after swapping look-alike characters (edit distance 1) - homoglyph lookalike domain
+  helpdesk-verify.test: no lookalike pattern (distance 9)
+
+3. Links in the HTML part
+  visible text: http://campushield.test/login
+  real href   : http://campushie1d-portal.test/verify?u=omar.haddad
+  [!] link text shows campushield.test but the browser would open campushie1d-portal.test
+
+4. Urgency / pressure wording
+  subject: [ACTION REQUIRED] Your CampusShield account will be suspended in 24 hours
+  [!] pressure keywords found: immediately, 24 hours, suspend, suspended, locked, action required, verify, unusual sign-in
+
+5. SPF / DKIM / DMARC results (header is simulated for the lab)
+  SPF   = fail
+  [!] SPF did not pass (fail)
+  DKIM  = none
+  [!] DKIM did not pass (none)
+  DMARC = fail
+  [!] DMARC did not pass (fail)
+
+Summary: 9 warning sign(s) -> verdict: LIKELY PHISHING / SPOOFED
+Note: a careful attacker can publish valid SPF/DKIM/DMARC for their OWN lookalike domain,
+so passing checks does not prove a message is from the university. DMARC protects the exact
+domain (campushield.test) from direct spoofing; lookalikes still need user verification.

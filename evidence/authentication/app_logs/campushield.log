@@ -1,0 +1,25 @@
+2026-11-20T02:16:43 campushield[14584]: LOGIN_SUCCESS user=admin1 ip=127.0.0.1 role=admin
+2026-11-20T02:16:43 campushield[14584]: ACCESS_DENIED user=admin1 ip=127.0.0.1 role=admin path=/students
+2026-11-20T02:16:43 campushield[14584]: ACCESS_DENIED user=admin1 ip=127.0.0.1 role=admin path=/search
+2026-11-20T02:16:43 campushield[14584]: ACCESS_DENIED user=admin1 ip=127.0.0.1 role=admin path=/registrar/attendance
+2026-11-20T02:16:43 campushield[14584]: ACCESS_DENIED user=admin1 ip=127.0.0.1 role=admin path=/attendance
+2026-11-20T02:16:43 campushield[14584]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:16:43 campushield[14584]: ACCESS_DENIED user=registrar1 ip=127.0.0.1 role=registrar path=/admin/users
+2026-11-20T02:16:43 campushield[14584]: ACCESS_DENIED user=registrar1 ip=127.0.0.1 role=registrar path=/admin/audit
+2026-11-20T02:16:43 campushield[14584]: ACCESS_DENIED user=registrar1 ip=127.0.0.1 role=registrar path=/attendance
+2026-11-20T02:16:44 campushield[14584]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:16:44 campushield[14584]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/admin/users
+2026-11-20T02:16:44 campushield[14584]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/admin/audit
+2026-11-20T02:16:44 campushield[14584]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/students
+2026-11-20T02:16:44 campushield[14584]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/search
+2026-11-20T02:16:44 campushield[14584]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/registrar/attendance
+2026-11-20T02:16:44 campushield[14584]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=1
+2026-11-20T02:16:44 campushield[14584]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=2
+2026-11-20T02:16:44 campushield[14584]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=3
+2026-11-20T02:16:45 campushield[14584]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=4
+2026-11-20T02:16:45 campushield[14584]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=5
+2026-11-20T02:16:45 campushield[14584]: ACCOUNT_LOCKED user=s2026002 ip=127.0.0.1 until=2026-11-20T02:31:45
+2026-11-20T02:16:45 campushield[14584]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=127.0.0.1 locked_until=2026-11-20T02:31:45
+2026-11-20T02:16:45 campushield[14584]: LOGIN_SUCCESS user=admin1 ip=127.0.0.1 role=admin
+2026-11-20T02:16:45 campushield[14584]: PASSWORD_POLICY_REJECT user=admin1 ip=127.0.0.1 new_user=newstudent1
+2026-11-20T02:16:45 campushield[14584]: USER_CREATED user=admin1 ip=127.0.0.1 new_user=newstudent2 role=student

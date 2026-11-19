@@ -1,0 +1,20 @@
+EXAMPLE e-mail authentication DNS records for the fictional domain campushield.test
+(BCS303 lab illustration only - .test is a reserved domain and these records are not published anywhere)
+
+1) SPF  (TXT record on campushield.test)
+   campushield.test.  IN TXT  "v=spf1 ip4:10.10.60.25 include:_spf.mailprovider.test -all"
+   - Lists the only servers allowed to send mail whose envelope sender (Return-Path) is @campushield.test.
+   - "-all" tells receivers to fail every other sending server.
+   - It checks the envelope domain, not the From: name the user sees, so on its own it does not stop display-name tricks.
+
+2) DKIM (TXT record on selector._domainkey.campushield.test)
+   cs2026._domainkey.campushield.test.  IN TXT  "v=DKIM1; k=rsa; p=<base64 public key of the university mail server>"
+   - The outgoing server signs selected headers and the body with its private key.
+   - Receivers fetch this public key and check the signature, so tampering in transit is detected.
+   - A valid signature only proves which domain signed it (d=), not that the content is honest.
+
+3) DMARC (TXT record on _dmarc.campushield.test)
+   _dmarc.campushield.test.  IN TXT  "v=DMARC1; p=reject; adkim=s; aspf=s; rua=mailto:dmarc-reports@campushield.test"
+   - Requires SPF or DKIM to pass AND to align with the visible From: domain.
+   - p=reject asks receivers to refuse mail that fails, so nobody can send as @campushield.test directly.
+   - rua= sends aggregate reports so IT can see who is trying to spoof the domain. It does not protect against lookalike domains such as campushie1d-support.test.

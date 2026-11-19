@@ -1,0 +1,16 @@
+$ bash monitoring/detect_failed_logins.sh evidence/monitoring/campushield_real_app.log 5 10
+== CampusShield failed-login detector ==
+log: evidence/monitoring/campushield_real_app.log
+rules: BRUTE_FORCE >= 5 failures from one IP within 10 min; PASSWORD_SPRAY >= 3 usernames from one IP
+run at 2026-11-20T02:22:54 on Zuhair-Laptop
+
+failed logins found: 6 from 1 source IP(s)
+
+source IP       failures    max in window  usernames tried
+127.0.0.1              6                6  s2026002
+
+ALERT BRUTE_FORCE ip=127.0.0.1 failures=6 between 2026-11-20T02:18:55 and 2026-11-20T02:18:56 users=s2026002
+
+ACCOUNT_LOCKED events: 1 (s2026002)
+ACCESS_DENIED events : 4 (s2026001:/students s2026001:/students s2026001:/students registrar1:/admin/users)
+alerts raised: 1 (appended to monitoring/alerts.log)

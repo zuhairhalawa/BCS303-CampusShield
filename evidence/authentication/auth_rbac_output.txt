@@ -1,0 +1,29 @@
+=== (a) RBAC matrix, secure build (200 = allowed, 403 = denied) ===
+user (role)             /admin/users           /admin/audit           /students              /search?q=a            /registrar/attendance  /attendance            
+admin1 (admin)          200                    200                    403                    403                    403                    403                    
+registrar1 (registrar)  403                    403                    200                    200                    200                    403                    
+s2026001 (student)      403                    403                    403                    403                    403                    200                    
+not logged in           302                    302                    302                    302                    302                    302                      (302 = redirect to /login)
+
+=== (b) Failed-login lockout for s2026002 ===
+attempt 1: wrong password -> HTTP 401
+attempt 2: wrong password -> HTTP 401
+attempt 3: wrong password -> HTTP 401
+attempt 4: wrong password -> HTTP 401
+attempt 5: wrong password -> HTTP 401
+attempt 6: CORRECT password -> HTTP 401 (account is locked, so still refused)
+users table: failed_attempts=5 locked_until=2026-11-20T02:31:45
+audit_log rows for s2026002:
+  2026-11-20T02:16:44 LOGIN_FAILED           attempts=1
+  2026-11-20T02:16:44 LOGIN_FAILED           attempts=2
+  2026-11-20T02:16:44 LOGIN_FAILED           attempts=3
+  2026-11-20T02:16:45 LOGIN_FAILED           attempts=4
+  2026-11-20T02:16:45 LOGIN_FAILED           attempts=5
+  2026-11-20T02:16:45 ACCOUNT_LOCKED         until=2026-11-20T02:31:45
+  2026-11-20T02:16:45 LOGIN_BLOCKED_LOCKED   locked_until=2026-11-20T02:31:45
+
+=== (c) Password policy when the admin creates accounts ===
+create newstudent1 with 'student123': <p class="flash">Rejected by password policy: shorter than 12 characters, no uppercase letter, no symbol, appears in common-password list</p>
+   -> account stored in DB? False
+create newstudent2 with 'Bq7!rT2#mW9$kL': <p class="flash">Created student account newstudent2.</p>
+   -> account stored in DB? True

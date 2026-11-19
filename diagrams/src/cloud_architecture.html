@@ -1,0 +1,135 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CampusShield conceptual cloud deployment</title>
+<style>body{margin:0;background:#fff}</style></head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="850" viewBox="0 0 1400 850">
+<style>
+  text { font-family: "Segoe UI", Arial, sans-serif; fill:#1d2433; font-size:14px; }
+  .t { font-size:24px; font-weight:700; }
+  .h { font-size:16px; font-weight:700; }
+  .b { font-weight:700; }
+  .w { fill:#ffffff; }
+  .halo { stroke:#ffffff; stroke-width:5px; paint-order:stroke; stroke-linejoin:round; }
+</style>
+<defs>
+  <marker id="aNavy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/></marker>
+</defs>
+<rect width="1400" height="850" fill="#ffffff"/>
+<text x="40" y="44" class="t">Conceptual cloud deployment for CampusShield (provider-neutral)</text>
+
+<!-- users -->
+<rect x="20" y="320" width="150" height="150" rx="10" fill="#ffffff" stroke="#1f4e79" stroke-width="2"/>
+<text x="95" y="350" text-anchor="middle" class="h">Users</text>
+<text x="95" y="376" text-anchor="middle">students</text>
+<text x="95" y="397" text-anchor="middle">registrar</text>
+<text x="95" y="418" text-anchor="middle">administrator</text>
+<text x="95" y="448" text-anchor="middle" style="font-style:italic">web browser</text>
+
+<!-- provider account -->
+<rect x="190" y="64" width="1200" height="708" rx="12" fill="none" stroke="#78909c" stroke-width="2" stroke-dasharray="10 6"/>
+<text x="206" y="88" class="b" style="fill:#455a64">Cloud provider account — conceptual design only, nothing was deployed</text>
+
+<!-- VPC -->
+<rect x="206" y="102" width="890" height="652" rx="10" fill="#fbfcfe" stroke="#1f4e79" stroke-width="2"/>
+<text x="222" y="126" class="b" style="fill:#1f4e79">VPC — [C6] segmented into three subnets with security groups and NACLs</text>
+
+<!-- public subnet -->
+<rect x="220" y="142" width="240" height="598" rx="8" fill="#fff3e0" stroke="#e07b00" stroke-width="2"/>
+<text x="236" y="168" class="h" style="fill:#b35c00">Public subnet</text>
+<text x="236" y="189">internet-facing tier only</text>
+<rect x="232" y="290" width="206" height="170" rx="8" fill="#1f4e79"/>
+<text x="246" y="318" class="b w" style="font-size:15px">Load balancer + WAF</text>
+<text x="246" y="344" class="w">[C1] HTTPS, TLS 1.2+</text>
+<text x="246" y="366" class="w">HTTP redirected to HTTPS</text>
+<text x="246" y="388" class="w">[C2] WAF managed rules</text>
+<text x="246" y="410" class="w">block common SQLi/XSS</text>
+<text x="246" y="438" class="w" style="font-style:italic">only tier with public IP</text>
+<text x="236" y="712">[C6] NACL: 443 inbound only</text>
+
+<!-- app subnet -->
+<rect x="474" y="142" width="290" height="598" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+<text x="490" y="168" class="h" style="fill:#1b5e20">Private app subnet</text>
+<text x="490" y="189">no route from the internet</text>
+<rect x="490" y="280" width="258" height="214" rx="8" fill="#1f4e79"/>
+<text x="504" y="308" class="b w" style="font-size:15px">CampusShield app tier</text>
+<text x="504" y="334" class="w">containers / VMs, autoscaling</text>
+<text x="504" y="356" class="w">no public IP</text>
+<text x="504" y="378" class="w">[C3] SG: 443 from LB only</text>
+<text x="504" y="400" class="w">secrets from vault [C8]</text>
+<text x="504" y="422" class="w">logs sent to SIEM [C9]</text>
+<text x="504" y="444" class="w">patched base image</text>
+<text x="504" y="472" class="w" style="font-style:italic">RBAC + MFA-backed SSO</text>
+<text x="490" y="712">[C6] NACL: from public subnet</text>
+
+<!-- db subnet -->
+<rect x="778" y="142" width="304" height="598" rx="8" fill="#dcedc8" stroke="#2e7d32" stroke-width="2"/>
+<text x="794" y="168" class="h" style="fill:#1b5e20">Private database subnet</text>
+<text x="794" y="189">reachable only from app tier</text>
+<rect x="794" y="280" width="272" height="214" rx="8" fill="#1f4e79"/>
+<text x="808" y="308" class="b w" style="font-size:15px">Managed SQL database</text>
+<text x="808" y="334" class="w">no public IP</text>
+<text x="808" y="356" class="w">[C4] SG: app tier only</text>
+<text x="808" y="378" class="w">[C5] encrypted at rest (KMS)</text>
+<text x="808" y="400" class="w">TLS required in transit</text>
+<text x="808" y="422" class="w">automated backups [C10]</text>
+<text x="808" y="444" class="w">point-in-time restore</text>
+<text x="808" y="472" class="w" style="font-style:italic">holds student records</text>
+<text x="794" y="712">[C6] NACL: from app subnet</text>
+
+<!-- data path -->
+<line x1="170" y1="380" x2="230" y2="380" stroke="#1f4e79" stroke-width="3" marker-end="url(#aNavy)"/>
+<text x="200" y="370" text-anchor="middle" class="b halo" style="fill:#1f4e79">HTTPS</text>
+<line x1="438" y1="380" x2="488" y2="380" stroke="#1f4e79" stroke-width="3" marker-end="url(#aNavy)"/>
+<text x="465" y="370" text-anchor="middle" class="b halo" style="fill:#1f4e79">HTTPS</text>
+<line x1="748" y1="380" x2="792" y2="380" stroke="#1f4e79" stroke-width="3" marker-end="url(#aNavy)"/>
+<text x="771" y="370" text-anchor="middle" class="b halo" style="fill:#1f4e79">TLS</text>
+
+<!-- shared security services -->
+<text x="1110" y="126" class="b" style="fill:#37474f">Shared security services</text>
+<rect x="1110" y="140" width="268" height="98" rx="8" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+<text x="1124" y="164" class="b" style="font-size:15px">Identity &amp; access (IAM) [C7]</text>
+<text x="1124" y="186">SSO + MFA for every staff login</text>
+<text x="1124" y="206">least-privilege role per job</text>
+<text x="1124" y="226">monitored break-glass account</text>
+
+<rect x="1110" y="244" width="268" height="98" rx="8" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+<text x="1124" y="268" class="b" style="font-size:15px">Secrets manager [C8]</text>
+<text x="1124" y="290">DB password, Flask secret key</text>
+<text x="1124" y="310">never stored in code or Git</text>
+<text x="1124" y="330">rotated automatically</text>
+
+<rect x="1110" y="348" width="268" height="98" rx="8" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+<text x="1124" y="372" class="b" style="font-size:15px">Key management (KMS) [C5]</text>
+<text x="1124" y="394">keys for DB, storage, backups</text>
+<text x="1124" y="414">yearly key rotation</text>
+<text x="1124" y="434">every key use is logged</text>
+
+<rect x="1110" y="452" width="268" height="98" rx="8" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+<text x="1124" y="476" class="b" style="font-size:15px">Logging &amp; SIEM [C9]</text>
+<text x="1124" y="498">app, audit, LB, DB and IAM logs</text>
+<text x="1124" y="518">alerts: failed-login bursts,</text>
+<text x="1124" y="538">firewall / config changes</text>
+
+<rect x="1110" y="556" width="268" height="98" rx="8" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+<text x="1124" y="580" class="b" style="font-size:15px">Backups &amp; recovery [C10]</text>
+<text x="1124" y="602">encrypted automatic snapshots</text>
+<text x="1124" y="622">copy kept in a second region</text>
+<text x="1124" y="642">restore tested each term</text>
+
+<rect x="1110" y="660" width="268" height="98" rx="8" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+<text x="1124" y="684" class="b" style="font-size:15px">Admin access [C11]</text>
+<text x="1124" y="706">no public SSH, no bastion host</text>
+<text x="1124" y="726">session manager with MFA</text>
+<text x="1124" y="746">admin sessions recorded</text>
+
+<!-- legend -->
+<rect x="40" y="796" width="24" height="16" rx="3" fill="#1f4e79"/>
+<text x="72" y="810">Application / managed component</text>
+<rect x="340" y="796" width="24" height="16" rx="3" fill="#fff3e0" stroke="#e07b00" stroke-width="1.5"/>
+<text x="372" y="810">Public subnet</text>
+<rect x="510" y="796" width="24" height="16" rx="3" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="542" y="810">Private subnet</text>
+<rect x="690" y="796" width="24" height="16" rx="3" fill="#eceff1" stroke="#78909c" stroke-width="1.5"/>
+<text x="722" y="810">Shared security service</text>
+<text x="940" y="810"><tspan class="b">[Cn]</tspan> = recommended control (C1–C11, see report)</text>
+</svg>
+</body></html>

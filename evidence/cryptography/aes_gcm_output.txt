@@ -1,0 +1,17 @@
+=== AES-256-GCM encryption of campus_records.csv ===
+plaintext size : 2510 bytes
+key            : 256-bit random key stored in output/aes.key (git-ignored, not shown)
+nonce (hex)    : 24b0db7341dcc823da17f219
+encrypted file : demonstrations\cryptography\output\records.enc (2538 bytes = 12 nonce + 2510 data + 16 tag)
+first line of plaintext : S2026001,Omar Haddad,omar.haddad@student.campushield.test,BSc Cybersecurity,2.64,050-000-8385
+first 48 bytes of cipher: a257406424961b10040ae2b78550b7b2f22ce46d6a4a496c867977c8ef91930e19a7bba257b9cc765a78618db6567a3d
+is the name 'Omar' visible in the ciphertext? False
+
+=== Decryption ===
+SHA-256 original : 31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac
+SHA-256 decrypted: 31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac
+identical        : True
+
+=== Tamper test (one bit flipped at byte 40 of the encrypted file) ===
+decryption refused: InvalidTag -> GCM detected the modification
+wrong key: InvalidTag -> data cannot be read without the right key

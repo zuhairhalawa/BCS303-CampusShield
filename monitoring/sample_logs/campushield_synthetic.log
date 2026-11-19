@@ -1,0 +1,29 @@
+2026-11-20T09:00:00 campushield[4242]: LOGIN_SUCCESS user=registrar1 ip=10.10.60.10 role=registrar
+2026-11-20T09:05:00 campushield[4242]: LOGIN_SUCCESS user=s2026001 ip=10.10.60.21 role=student
+2026-11-20T09:05:40 campushield[4242]: ATTENDANCE_QUERY user=s2026001 ip=10.10.60.21 course='BCS303' rows=6
+2026-11-20T09:12:00 campushield[4242]: LOGIN_SUCCESS user=admin1 ip=10.10.60.5 role=admin
+2026-11-20T09:20:00 campushield[4242]: LOGIN_SUCCESS user=s2026020 ip=10.10.60.33 role=student
+2026-11-20T09:20:40 campushield[4242]: ATTENDANCE_QUERY user=s2026020 ip=10.10.60.33 course='BCS303' rows=6
+2026-11-20T09:30:05 campushield[4242]: LOGIN_FAILED user=s2026002 ip=10.10.60.22 attempts=1
+2026-11-20T09:30:20 campushield[4242]: LOGIN_SUCCESS user=s2026002 ip=10.10.60.22 role=student
+2026-11-20T09:45:00 campushield[4242]: ATTENDANCE_MARKED user=registrar1 ip=10.10.60.10 S2026001 BCS303 2026-11-20 present
+2026-11-20T10:15:00 campushield[4242]: LOGIN_FAILED user=s2026002 ip=10.10.50.66 attempts=1
+2026-11-20T10:15:15 campushield[4242]: LOGIN_FAILED user=s2026002 ip=10.10.50.66 attempts=2
+2026-11-20T10:15:30 campushield[4242]: LOGIN_FAILED user=s2026002 ip=10.10.50.66 attempts=3
+2026-11-20T10:15:45 campushield[4242]: LOGIN_FAILED user=s2026002 ip=10.10.50.66 attempts=4
+2026-11-20T10:16:00 campushield[4242]: LOGIN_FAILED user=s2026002 ip=10.10.50.66 attempts=5
+2026-11-20T10:16:00 campushield[4242]: ACCOUNT_LOCKED user=s2026002 ip=10.10.50.66 until=2026-11-20T10:31:00
+2026-11-20T10:16:15 campushield[4242]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=10.10.50.66 locked_until=2026-11-20T10:31:00
+2026-11-20T10:16:30 campushield[4242]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=10.10.50.66 locked_until=2026-11-20T10:31:00
+2026-11-20T10:16:45 campushield[4242]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=10.10.50.66 locked_until=2026-11-20T10:31:00
+2026-11-20T11:02:10 campushield[4242]: LOGIN_FAILED user=admin1 ip=10.10.50.77 attempts=1
+2026-11-20T11:03:10 campushield[4242]: LOGIN_FAILED user=registrar1 ip=10.10.50.77 attempts=1
+2026-11-20T11:04:10 campushield[4242]: LOGIN_FAILED user=s2026001 ip=10.10.50.77 attempts=1
+2026-11-20T11:05:10 campushield[4242]: LOGIN_FAILED user=bob ip=10.10.50.77 attempts=unknown_user
+2026-11-20T11:30:00 campushield[4242]: ACCESS_DENIED user=s2026001 ip=10.10.60.21 role=student path=/students
+2026-11-20T11:30:30 campushield[4242]: ACCESS_DENIED user=s2026001 ip=10.10.60.21 role=student path=/admin/users
+2026-11-20T12:00:00 campushield[4242]: LOGIN_FAILED user=registrar1 ip=10.10.50.88 attempts=1
+2026-11-20T12:20:00 campushield[4242]: LOGIN_FAILED user=registrar1 ip=10.10.50.88 attempts=2
+2026-11-20T12:40:00 campushield[4242]: LOGIN_FAILED user=registrar1 ip=10.10.50.88 attempts=3
+2026-11-20T13:00:00 campushield[4242]: LOGIN_FAILED user=registrar1 ip=10.10.50.88 attempts=4
+2026-11-20T13:30:00 campushield[4242]: LOGIN_SUCCESS user=registrar1 ip=10.10.60.10 role=registrar

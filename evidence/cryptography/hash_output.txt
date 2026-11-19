@@ -1,0 +1,15 @@
+=== 1. Generate SHA-256 ===
+31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac  campus_records.csv
+saved to data\synthetic\campus_records.csv.sha256
+
+=== 2. Verify original file ===
+stored : 31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac
+current: 31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac
+result : OK - file unchanged
+
+=== 3. Verify a modified copy (one GPA changed) ===
+changed S2026001 GPA from 2.64 to 4.00
+stored : 31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac
+current: 1f8dea690a27707d66c8fd09882c6cfca4c139d9bf57528f19694543c22da5d8
+result : MISMATCH - integrity violation detected
+bits that differ between the two hashes: 121 of 256 (avalanche effect)

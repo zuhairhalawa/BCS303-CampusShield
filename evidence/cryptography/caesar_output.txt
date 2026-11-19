@@ -1,0 +1,36 @@
+=== Caesar cipher ===
+plaintext : Meet at the library at 3pm
+shift/key : 7
+ciphertext: Tlla ha aol spiyhyf ha 3wt
+decrypted : Meet at the library at 3pm
+round trip OK: True
+
+=== Brute force: an attacker simply tries all 25 possible shifts ===
+shift  1: Skkz gz znk rohxgxe gz 3vs
+shift  2: Rjjy fy ymj qngwfwd fy 3ur
+shift  3: Qiix ex xli pmfvevc ex 3tq
+shift  4: Phhw dw wkh oleudub dw 3sp
+shift  5: Oggv cv vjg nkdtcta cv 3ro
+shift  6: Nffu bu uif mjcsbsz bu 3qn
+shift  7: Meet at the library at 3pm   <-- readable English
+shift  8: Ldds zs sgd khaqzqx zs 3ol
+shift  9: Kccr yr rfc jgzpypw yr 3nk
+shift 10: Jbbq xq qeb ifyoxov xq 3mj
+shift 11: Iaap wp pda hexnwnu wp 3li
+shift 12: Hzzo vo ocz gdwmvmt vo 3kh
+shift 13: Gyyn un nby fcvluls un 3jg
+shift 14: Fxxm tm max ebuktkr tm 3if
+shift 15: Ewwl sl lzw datjsjq sl 3he
+shift 16: Dvvk rk kyv czsirip rk 3gd
+shift 17: Cuuj qj jxu byrhqho qj 3fc
+shift 18: Btti pi iwt axqgpgn pi 3eb
+shift 19: Assh oh hvs zwpfofm oh 3da
+shift 20: Zrrg ng gur yvoenel ng 3cz
+shift 21: Yqqf mf ftq xundmdk mf 3by
+shift 22: Xppe le esp wtmclcj le 3ax
+shift 23: Wood kd dro vslbkbi kd 3zw
+shift 24: Vnnc jc cqn urkajah jc 3yv
+shift 25: Ummb ib bpm tqjzizg ib 3xu
+
+Key space = 25 useful keys, so the cipher is broken instantly by hand or by a 1-line loop.
+Letter frequencies and word lengths are also preserved (e.g. 'at' -> 'ha' both times).

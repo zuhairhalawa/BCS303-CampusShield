@@ -1,0 +1,151 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>CampusShield architecture</title>
+<style>body{margin:0;background:#fff}</style></head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="895" viewBox="0 0 1400 895">
+<style>
+  text { font-family: "Segoe UI", Arial, sans-serif; fill:#1d2433; font-size:14px; }
+  .t { font-size:24px; font-weight:700; }
+  .h { font-size:16px; font-weight:700; }
+  .b { font-weight:700; }
+  .w { fill:#ffffff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+  .tb { fill:#b35c00; font-weight:700; }
+</style>
+<defs>
+  <marker id="aNavy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/></marker>
+  <marker id="aGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2e7d32"/></marker>
+  <marker id="aRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c62828"/></marker>
+  <marker id="aOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e07b00"/></marker>
+</defs>
+<rect width="1400" height="895" fill="#ffffff"/>
+
+<text x="40" y="44" class="t">CampusShield architecture, lab isolation and trust boundaries</text>
+
+<!-- isolated lab boundary -->
+<rect x="20" y="62" width="1360" height="742" rx="12" fill="none" stroke="#455a64" stroke-width="2" stroke-dasharray="10 6"/>
+<text x="40" y="90" class="h" fill="#455a64" style="fill:#455a64">ISOLATED LAB — Kali Linux VM (VMware, host-only/NAT lab network, no Internet targets)</text>
+
+<!-- authorized zone -->
+<rect x="40" y="110" width="290" height="440" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+<text x="56" y="136" class="h" style="fill:#1b5e20">cs_staff — authorized zone</text>
+<text x="56" y="157">network namespace, 10.10.60.10/24</text>
+<rect x="52" y="170" width="266" height="342" rx="8" fill="none" stroke="#e07b00" stroke-width="2" stroke-dasharray="6 4"/>
+<rect x="64" y="182" width="242" height="92" rx="8" fill="#ffffff" stroke="#1f4e79" stroke-width="1.5"/>
+<text x="78" y="208" class="b">Administrator</text>
+<text x="78" y="231">manage accounts, unlock users</text>
+<text x="78" y="253">view audit log</text>
+<rect x="64" y="284" width="242" height="92" rx="8" fill="#ffffff" stroke="#1f4e79" stroke-width="1.5"/>
+<text x="78" y="310" class="b">Registrar</text>
+<text x="78" y="333">student records and search</text>
+<text x="78" y="355">mark attendance, register</text>
+<rect x="64" y="386" width="242" height="92" rx="8" fill="#ffffff" stroke="#1f4e79" stroke-width="1.5"/>
+<text x="78" y="412" class="b">Student</text>
+<text x="78" y="435">own attendance only</text>
+<text x="78" y="457">(student_id from session)</text>
+<text x="64" y="502" class="tb">TB3 — roles separated by RBAC</text>
+
+<!-- unauthorized zone -->
+<rect x="40" y="580" width="290" height="200" rx="10" fill="#fdecea" stroke="#c62828" stroke-width="2"/>
+<text x="54" y="606" class="b" style="fill:#b71c1c;font-size:15px">cs_untrusted — unauthorized zone</text>
+<text x="54" y="627">network namespace, 10.10.50.66/24</text>
+<rect x="60" y="642" width="250" height="56" rx="8" fill="#ffffff" stroke="#c62828" stroke-width="1.5"/>
+<text x="185" y="675" text-anchor="middle">unknown lab host / nmap scanner</text>
+<text x="54" y="730">blocked at the host firewall</text>
+<text x="54" y="751">(LOG + DROP after hardening)</text>
+
+<!-- flows into the firewall -->
+<line x1="330" y1="330" x2="476" y2="330" stroke="#2e7d32" stroke-width="3" marker-end="url(#aGreen)"/>
+<line x1="330" y1="712" x2="356" y2="712" stroke="#c62828" stroke-width="3" marker-end="url(#aRed)"/>
+
+<!-- firewall -->
+<rect x="360" y="138" width="56" height="642" rx="6" fill="#eceff1" stroke="#546e7a" stroke-width="2"/>
+<text transform="translate(394,470) rotate(-90)" text-anchor="middle" class="h" style="fill:#37474f">Host firewall (iptables)</text>
+<rect x="354" y="108" width="68" height="24" rx="12" fill="#fff3e0" stroke="#e07b00" stroke-width="1.5"/>
+<text x="388" y="125" text-anchor="middle" class="tb">TB1</text>
+<rect x="362" y="318" width="52" height="24" rx="5" fill="#2e7d32"/>
+<text x="388" y="335" text-anchor="middle" class="b w" style="font-size:13.5px">ALLOW</text>
+<rect x="362" y="700" width="52" height="24" rx="5" fill="#c62828"/>
+<text x="388" y="717" text-anchor="middle" class="b w">DROP</text>
+
+<!-- OS layer -->
+<rect x="440" y="110" width="920" height="670" rx="10" fill="#f5f6f8" stroke="#78909c" stroke-width="2"/>
+<text x="458" y="136" class="h" style="fill:#37474f">Kali Linux OS layer</text>
+<text x="458" y="157">accounts cs_app, cs_registrar, cs_student · data dir 750, DB and log files 640 · least privilege</text>
+
+<!-- app -->
+<rect x="480" y="175" width="390" height="285" rx="10" fill="#1f4e79"/>
+<text x="500" y="205" class="h w" style="font-size:17px">CampusShield portal (Flask)</text>
+<text x="500" y="228" class="w">listens on tcp/5000 (HTTP)</text>
+<text x="500" y="262" class="w">• RBAC decorator require_roles()</text>
+<text x="500" y="286" class="w">• PBKDF2-HMAC-SHA256 + random salt</text>
+<text x="500" y="310" class="w">• lockout after 5 failed logins (15 min)</text>
+<text x="500" y="334" class="w">• CSRF token on POST forms</text>
+<text x="500" y="358" class="w">• parameterised SQL, auto-escaped output</text>
+<text x="500" y="382" class="w">• security headers (CSP, X-Frame-Options)</text>
+<text x="500" y="420" class="w" style="font-style:italic">secure build by default; vulnerable build</text>
+<text x="500" y="441" class="w" style="font-style:italic">only for isolated lab demonstrations</text>
+
+<!-- TB2 -->
+<line x1="915" y1="172" x2="915" y2="462" stroke="#e07b00" stroke-width="2.5" stroke-dasharray="7 5"/>
+<rect x="885" y="466" width="60" height="24" rx="12" fill="#fff3e0" stroke="#e07b00" stroke-width="1.5"/>
+<text x="915" y="483" text-anchor="middle" class="tb">TB2</text>
+<text x="876" y="319" class="b" style="fill:#1f4e79">SQL</text>
+<line x1="870" y1="330" x2="958" y2="330" stroke="#1f4e79" stroke-width="2.5" marker-end="url(#aNavy)"/>
+
+<!-- database -->
+<rect x="960" y="175" width="380" height="285" rx="10" fill="#ffffff" stroke="#1f4e79" stroke-width="2"/>
+<path d="M960,185 a10,10 0 0 1 10,-10 h360 a10,10 0 0 1 10,10 v36 h-380 z" fill="#1f4e79"/>
+<text x="980" y="205" class="h w" style="font-size:17px">SQLite database</text>
+<text x="980" y="250" class="mono b" style="fill:#1f4e79">data/campushield.db</text>
+<text x="980" y="280">students — 20 synthetic records</text>
+<text x="980" y="304">users — PBKDF2 hashes, lockout state</text>
+<text x="980" y="328">courses, registrations</text>
+<text x="980" y="352">attendance — 360 synthetic rows</text>
+<text x="980" y="376">audit_log — security events</text>
+<text x="980" y="425" class="b">owner cs_app · file mode 640</text>
+
+<!-- logging -->
+<line x1="675" y1="460" x2="675" y2="497" stroke="#1f4e79" stroke-width="2.5" marker-end="url(#aNavy)"/>
+<text x="688" y="486">writes</text>
+<rect x="480" y="500" width="390" height="96" rx="8" fill="#ffffff" stroke="#1f4e79" stroke-width="1.5"/>
+<text x="500" y="528" class="b" style="font-size:15px">Application log</text>
+<text x="500" y="551" class="mono">logs/campushield.log</text>
+<text x="500" y="575">LOGIN_FAILED, ACCOUNT_LOCKED, ACCESS_DENIED</text>
+
+<line x1="870" y1="548" x2="958" y2="548" stroke="#1f4e79" stroke-width="2.5" marker-end="url(#aNavy)"/>
+<text x="893" y="538">reads</text>
+<rect x="960" y="500" width="380" height="96" rx="8" fill="#ffffff" stroke="#1f4e79" stroke-width="1.5"/>
+<text x="980" y="528" class="b" style="font-size:15px">Monitoring script</text>
+<text x="980" y="551" class="mono">monitoring/detect_failed_logins.sh</text>
+<text x="980" y="575">counts repeated failures per user / IP</text>
+
+<line x1="1150" y1="596" x2="1150" y2="633" stroke="#e07b00" stroke-width="2.5" marker-end="url(#aOrange)"/>
+<rect x="960" y="636" width="380" height="72" rx="8" fill="#fff3e0" stroke="#e07b00" stroke-width="1.5"/>
+<text x="980" y="664" class="b" style="fill:#b35c00;font-size:15px">Alert report</text>
+<text x="980" y="688">repeated failed logins → ALERT line</text>
+
+<!-- removed service -->
+<rect x="480" y="636" width="390" height="120" rx="8" fill="#eeeeee" stroke="#9e9e9e" stroke-width="2" stroke-dasharray="6 4"/>
+<line x1="480" y1="636" x2="870" y2="756" stroke="#c62828" stroke-width="3" opacity="0.2"/>
+<line x1="870" y1="636" x2="480" y2="756" stroke="#c62828" stroke-width="3" opacity="0.2"/>
+<text x="500" y="664" class="b" style="fill:#616161;font-size:15px">Python http.server “backup share”</text>
+<text x="500" y="688" style="fill:#616161">tcp/8000 — not needed by the portal</text>
+<text x="500" y="710" style="fill:#616161">exposes the data/ folder (before)</text>
+<text x="500" y="738" class="b" style="fill:#c62828">Removed during hardening</text>
+
+<!-- legend -->
+<rect x="40" y="822" width="24" height="16" rx="3" fill="#1f4e79"/>
+<text x="72" y="836">Application component</text>
+<rect x="262" y="822" width="24" height="16" rx="3" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+<text x="294" y="836">Authorized zone</text>
+<rect x="440" y="822" width="24" height="16" rx="3" fill="#fdecea" stroke="#c62828" stroke-width="1.5"/>
+<text x="472" y="836">Unauthorized zone</text>
+<rect x="636" y="822" width="24" height="16" rx="3" fill="#f5f6f8" stroke="#78909c" stroke-width="1.5"/>
+<text x="668" y="836">OS / infrastructure</text>
+<rect x="836" y="822" width="24" height="16" rx="3" fill="#eeeeee" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="868" y="836">Removed service</text>
+<line x1="1020" y1="830" x2="1056" y2="830" stroke="#e07b00" stroke-width="2.5" stroke-dasharray="7 5"/>
+<text x="1066" y="836">Trust boundary</text>
+<text x="40" y="870">TB1 = network edge (host firewall)   ·   TB2 = application ↔ database and files   ·   TB3 = between user roles (RBAC)</text>
+</svg>
+</body></html>

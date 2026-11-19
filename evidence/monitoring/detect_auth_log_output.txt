@@ -1,0 +1,17 @@
+== CampusShield failed-login detector ==
+log: monitoring/sample_logs/auth_synthetic.log
+rules: BRUTE_FORCE >= 5 failures from one IP within 10 min; PASSWORD_SPRAY >= 3 usernames from one IP
+run at 2026-11-20T02:19:35 on Zuhair-Laptop
+
+failed logins found: 9 from 2 source IP(s)
+
+source IP       failures    max in window  usernames tried
+10.10.50.66            6                6  root
+10.10.50.99            3                3  test oracle guest
+
+ALERT BRUTE_FORCE ip=10.10.50.66 failures=6 between Nov 20 14:20:00 and Nov 20 14:20:40 users=root
+ALERT PASSWORD_SPRAY ip=10.10.50.99 distinct_users=3 users=test oracle guest
+
+ACCOUNT_LOCKED events: 0
+ACCESS_DENIED events : 0
+alerts raised: 2 (appended to monitoring/alerts.log)

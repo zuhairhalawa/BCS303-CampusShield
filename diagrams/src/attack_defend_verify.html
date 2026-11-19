@@ -1,0 +1,68 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Attack defend verify loop</title>
+<style>body{margin:0;background:#fff}</style></head><body>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="372" viewBox="0 0 1400 372">
+<style>
+  text { font-family: "Segoe UI", Arial, sans-serif; fill:#1d2433; font-size:14px; }
+  .t { font-size:24px; font-weight:700; }
+  .h { font-size:16px; font-weight:700; }
+  .b { font-weight:700; }
+  .w { fill:#ffffff; }
+  .mono { font-family: Consolas, "Courier New", monospace; }
+</style>
+<defs>
+  <marker id="aNavy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f4e79"/></marker>
+  <marker id="aOrange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e07b00"/></marker>
+</defs>
+<rect width="1400" height="372" fill="#ffffff"/>
+<text x="40" y="44" class="t">Attack → defend → verify loop used for every exercise</text>
+
+<!-- step boxes -->
+<rect x="30" y="76" width="230" height="120" rx="10" fill="#eceff1" stroke="#78909c" stroke-width="2"/>
+<text x="145" y="114" text-anchor="middle" class="h">1. Baseline</text>
+<text x="145" y="142" text-anchor="middle">record the current state</text>
+<text x="145" y="164" text-anchor="middle">before touching anything</text>
+
+<rect x="305" y="76" width="230" height="120" rx="10" fill="#fdecea" stroke="#c62828" stroke-width="2"/>
+<text x="420" y="114" text-anchor="middle" class="h" style="fill:#b71c1c">2. Validate weakness</text>
+<text x="420" y="142" text-anchor="middle">safe, minimal proof</text>
+<text x="420" y="164" text-anchor="middle">in the isolated lab</text>
+
+<rect x="580" y="76" width="230" height="120" rx="10" fill="#1f4e79"/>
+<text x="695" y="114" text-anchor="middle" class="h w">3. Apply control</text>
+<text x="695" y="142" text-anchor="middle" class="w">implement one specific</text>
+<text x="695" y="164" text-anchor="middle" class="w">defensive change</text>
+
+<rect x="855" y="76" width="230" height="120" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+<text x="970" y="114" text-anchor="middle" class="h" style="fill:#1b5e20">4. Re-test</text>
+<text x="970" y="142" text-anchor="middle">repeat the exact same test</text>
+<text x="970" y="164" text-anchor="middle">+ check normal use still works</text>
+
+<rect x="1130" y="76" width="240" height="120" rx="10" fill="#fff3e0" stroke="#e07b00" stroke-width="2"/>
+<text x="1250" y="114" text-anchor="middle" class="h" style="fill:#b35c00">5. Quantify change</text>
+<text x="1250" y="142" text-anchor="middle">compare before vs after,</text>
+<text x="1250" y="164" text-anchor="middle">note residual risk</text>
+
+<line x1="260" y1="136" x2="302" y2="136" stroke="#1f4e79" stroke-width="3" marker-end="url(#aNavy)"/>
+<line x1="535" y1="136" x2="577" y2="136" stroke="#1f4e79" stroke-width="3" marker-end="url(#aNavy)"/>
+<line x1="810" y1="136" x2="852" y2="136" stroke="#1f4e79" stroke-width="3" marker-end="url(#aNavy)"/>
+<line x1="1085" y1="136" x2="1127" y2="136" stroke="#1f4e79" stroke-width="3" marker-end="url(#aNavy)"/>
+
+<!-- worked example -->
+<text x="30" y="232" class="b" style="font-size:15px">Example — SQL injection in the student attendance lookup (Task 4)</text>
+<text x="145" y="262" text-anchor="middle">student s2026001 normally</text>
+<text x="145" y="284" text-anchor="middle">sees only own rows</text>
+<text x="420" y="262" text-anchor="middle" class="mono">BCS303' OR '1'='1</text>
+<text x="420" y="284" text-anchor="middle">→ 360 rows (all students)</text>
+<text x="695" y="262" text-anchor="middle">parameterised query</text>
+<text x="695" y="284" text-anchor="middle">+ allow-list validation</text>
+<text x="970" y="262" text-anchor="middle">same input rejected: 0 rows;</text>
+<text x="970" y="284" text-anchor="middle">normal course query works</text>
+<text x="1250" y="262" text-anchor="middle" class="b">360 → 0 rows exposed</text>
+<text x="1250" y="284" text-anchor="middle">residual risk recorded</text>
+
+<!-- feedback loop -->
+<polyline points="1250,298 1250,322 145,322 145,302" fill="none" stroke="#e07b00" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#aOrange)"/>
+<text x="697" y="350" text-anchor="middle" style="fill:#b35c00" class="b">refine the control and repeat if the re-test still shows the weakness</text>
+</svg>
+</body></html>

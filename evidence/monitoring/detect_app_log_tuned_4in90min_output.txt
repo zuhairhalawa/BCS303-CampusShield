@@ -1,0 +1,21 @@
+== CampusShield failed-login detector ==
+log: monitoring/sample_logs/campushield_synthetic.log
+rules: BRUTE_FORCE >= 4 failures from one IP within 90 min; PASSWORD_SPRAY >= 3 usernames from one IP
+run at 2026-11-20T02:19:42 on Zuhair-Laptop
+
+failed logins found: 17 from 4 source IP(s)
+
+source IP       failures    max in window  usernames tried
+10.10.50.66            8                8  s2026002
+10.10.50.77            4                4  admin1 registrar1 s2026001 bob
+10.10.50.88            4                4  registrar1
+10.10.60.22            1                1  s2026002
+
+ALERT BRUTE_FORCE ip=10.10.50.66 failures=8 between 2026-11-20T10:15:00 and 2026-11-20T10:16:45 users=s2026002
+ALERT BRUTE_FORCE ip=10.10.50.77 failures=4 between 2026-11-20T11:02:10 and 2026-11-20T11:05:10 users=admin1 registrar1 s2026001 bob
+ALERT PASSWORD_SPRAY ip=10.10.50.77 distinct_users=4 users=admin1 registrar1 s2026001 bob
+ALERT BRUTE_FORCE ip=10.10.50.88 failures=4 between 2026-11-20T12:00:00 and 2026-11-20T13:00:00 users=registrar1
+
+ACCOUNT_LOCKED events: 1 (s2026002)
+ACCESS_DENIED events : 2 (s2026001:/students s2026001:/admin/users)
+alerts raised: 4 (appended to monitoring/alerts.log)

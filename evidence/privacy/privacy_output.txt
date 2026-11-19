@@ -1,0 +1,60 @@
+CampusShield privacy evaluation (synthetic data only)
+input: data/synthetic/privacy_students.csv  records: 24
+direct identifiers: full_name, student_id, email
+quasi-identifiers : date_of_birth, gender, nationality, home_area, programme
+sensitive attribute: scholarship   target: k >= 2, suppress at most 20% of rows
+
+--- BEFORE (raw data)
+records=24  equivalence classes=24  k=1  records in groups smaller than 2: 24
+records unique on QIs = 24 (100.0%)
+average re-identification risk = 100.0%   maximum = 100.0%
+
+step 1: drop full_name and email; student_id -> HMAC-SHA256 pseudonym (random 256-bit key for this run, not saved)
+
+step 2.1: generalisation level 1: DOB -> 2-year band, nationality -> region (Gulf/Levant/North Africa/South Asia), home_area -> emirate
+--- AFTER level-1 generalisation
+records=24  equivalence classes=21  k=1  records in groups smaller than 2: 19
+records unique on QIs = 19 (79.2%)
+average re-identification risk = 87.5%   maximum = 100.0%
+
+step 2.2: generalisation level 2: DOB -> 4-year band, region -> MENA / South Asia, emirate kept
+--- AFTER level-2 generalisation
+records=24  equivalence classes=16  k=1  records in groups smaller than 2: 12
+records unique on QIs = 12 (50.0%)
+average re-identification risk = 66.7%   maximum = 100.0%
+
+step 2.3: generalisation level 3: as level 2 and emirate suppressed (all 'UAE')
+--- AFTER level-3 generalisation
+records=24  equivalence classes=10  k=1  records in groups smaller than 2: 3
+records unique on QIs = 3 (12.5%)
+average re-identification risk = 41.7%   maximum = 100.0%
+
+step 3: kept generalisation level 3; suppressed 3 record(s) (12.5%) still in groups smaller than 2
+--- AFTER (final released table)
+records=21  equivalence classes=7  k=2  records in groups smaller than 2: 0
+records unique on QIs = 0 (0.0%)
+average re-identification risk = 33.3%   maximum = 50.0%
+
+homogeneity check: 2 of 7 released groups have only one scholarship value (an attacker who places someone in that group learns it)
+
+--- Utility check: mean GPA per programme
+                         gpa_before  gpa_after  n_before  n_after
+programme                                                        
+BSc Computer Science           2.84       2.88         9        8
+BSc Cybersecurity              3.12       3.03         3        2
+BSc Information Systems        3.12       3.06        12       11
+scholarship counts before: {'none': 13, 'merit': 6, 'need-based': 3, 'sports': 2}
+scholarship counts after : {'none': 12, 'merit': 4, 'need-based': 3, 'sports': 2}
+no longer possible after release: exact age, nationality-level statistics,
+neighbourhood-level analysis, contacting a student, joining with other data by student_id.
+
+NOTE: pseudo_id is a keyed pseudonym. Anyone holding the key (or a lookup table)
+can re-link it to the student. This is pseudonymisation, not full anonymisation.
+released table written to privacy/output/privacy_students_anonymised.csv (21 rows)
+chart written to evidence/privacy/k_anonymity_before_after.png
+
+--- Cost of stronger protection (rows that would have to be suppressed)
+level | k=2 suppressed | k=3 suppressed
+  L1  |      19/24     |      21/24
+  L2  |      12/24     |      16/24
+  L3  |       3/24     |      11/24

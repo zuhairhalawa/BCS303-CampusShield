@@ -1,0 +1,23 @@
+=== Hide ===
+cover image : demonstrations\steganography\cover.png 400x260 px
+message     : 'CampusShield lab: the BCS303 demo starts at 10:00 in Lab 2.' (59 bytes = 504 bits incl. header)
+stego image : demonstrations\steganography\stego.png
+file sizes  : cover 8667 bytes, stego 9008 bytes
+
+=== Extract ===
+recovered   : 'CampusShield lab: the BCS303 demo starts at 10:00 in Lab 2.'
+matches     : True
+
+=== How visible is the change? ===
+pixels changed: 134 of 104000 (0.13%)
+largest change in any colour channel: 1 (out of 255) - not visible to the eye
+
+=== Limitation 1: lossy re-compression destroys the message ===
+after JPEG re-save: extraction failed (ValueError: no valid hidden message (length header = 3681399222))
+
+=== Limitation 2: hiding is not encryption ===
+Anyone who suspects LSB stego can run the same reveal() function and read the text in clear:
+  third-party extraction -> 'CampusShield lab: the BCS303 demo starts at 10:00 in Lab 2.'
+To keep the content confidential, encrypt it first (e.g. AES-GCM) and then hide the ciphertext.
+
+comparison picture saved to evidence\steganography\cover_vs_stego.png

@@ -1,0 +1,65 @@
+2026-11-20T02:13:51 campushield[13840]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:13:51 campushield[13840]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS303' rows=6
+2026-11-20T02:13:51 campushield[13840]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/students
+2026-11-20T02:13:51 campushield[13840]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS303' OR '1'='1" rows=0
+2026-11-20T02:13:51 campushield[13840]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:13:51 campushield[13840]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS303' rows=6
+2026-11-20T02:13:51 campushield[13840]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/students
+2026-11-20T02:13:51 campushield[13840]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS303' OR '1'='1" rows=360
+2026-11-20T02:17:13 campushield[26612]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:17:13 campushield[8780]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:17:13 campushield[26612]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS210' rows=6
+2026-11-20T02:17:13 campushield[8780]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS210' rows=6
+2026-11-20T02:17:13 campushield[26612]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=360
+2026-11-20T02:17:13 campushield[8780]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=0
+2026-11-20T02:17:13 campushield[26612]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="x' UNION SELECT username, role, password_hash, 'leak', 'leak' FROM users --" rows=5
+2026-11-20T02:17:13 campushield[8780]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="x' UNION SELECT username, role, password_hash, 'leak', 'leak' FROM users --" rows=0
+2026-11-20T02:17:13 campushield[26612]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="'" rows=0
+2026-11-20T02:17:13 campushield[8780]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="'" rows=0
+2026-11-20T02:17:31 campushield[16760]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:17:32 campushield[19584]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:17:32 campushield[16760]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS210' rows=6
+2026-11-20T02:17:32 campushield[19584]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS210' rows=6
+2026-11-20T02:17:32 campushield[16760]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=360
+2026-11-20T02:17:32 campushield[19584]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=0
+2026-11-20T02:17:34 campushield[26744]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:17:35 campushield[29480]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:01 campushield[26016]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:18:01 campushield[30096]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:18:01 campushield[26016]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS210' rows=6
+2026-11-20T02:18:01 campushield[30096]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS210' rows=6
+2026-11-20T02:18:01 campushield[26016]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=360
+2026-11-20T02:18:01 campushield[30096]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=0
+2026-11-20T02:18:01 campushield[26016]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="x' UNION SELECT username, role, password_hash, 'leak', 'leak' FROM users --" rows=5
+2026-11-20T02:18:01 campushield[30096]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="x' UNION SELECT username, role, password_hash, 'leak', 'leak' FROM users --" rows=0
+2026-11-20T02:18:01 campushield[26016]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="'" rows=0
+2026-11-20T02:18:01 campushield[30096]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="'" rows=0
+2026-11-20T02:18:04 campushield[11216]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:05 campushield[30016]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:07 campushield[11216]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:08 campushield[30016]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:45 campushield[25128]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:45 campushield[31240]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:45 campushield[25128]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:46 campushield[31240]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:48 campushield[25128]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:48 campushield[31240]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:53 campushield[30480]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:18:53 campushield[30480]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=360
+2026-11-20T02:18:53 campushield[30480]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="x' UNION SELECT username, role, password_hash, 'leak', 'leak' FROM users --" rows=5
+2026-11-20T02:18:53 campushield[30472]: LOGIN_SUCCESS user=s2026001 ip=127.0.0.1 role=student
+2026-11-20T02:18:53 campushield[30472]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course='BCS210' rows=6
+2026-11-20T02:18:54 campushield[30472]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="BCS210' OR '1'='1" rows=0
+2026-11-20T02:18:54 campushield[30472]: ATTENDANCE_QUERY user=s2026001 ip=127.0.0.1 course="x' UNION SELECT username, role, password_hash, 'leak', 'leak' FROM users --" rows=0
+2026-11-20T02:18:54 campushield[30472]: ACCESS_DENIED user=s2026001 ip=127.0.0.1 role=student path=/students
+2026-11-20T02:18:54 campushield[30472]: LOGIN_SUCCESS user=registrar1 ip=127.0.0.1 role=registrar
+2026-11-20T02:18:54 campushield[30472]: ACCESS_DENIED user=registrar1 ip=127.0.0.1 role=registrar path=/admin/users
+2026-11-20T02:18:55 campushield[30472]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=1
+2026-11-20T02:18:55 campushield[30472]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=2
+2026-11-20T02:18:56 campushield[30472]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=3
+2026-11-20T02:18:56 campushield[30472]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=4
+2026-11-20T02:18:56 campushield[30472]: LOGIN_FAILED user=s2026002 ip=127.0.0.1 attempts=5
+2026-11-20T02:18:56 campushield[30472]: ACCOUNT_LOCKED user=s2026002 ip=127.0.0.1 until=2026-11-20T02:33:56
+2026-11-20T02:18:56 campushield[30472]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=127.0.0.1 locked_until=2026-11-20T02:33:56
+2026-11-20T02:18:57 campushield[30472]: LOGIN_SUCCESS user=admin1 ip=127.0.0.1 role=admin
+2026-11-20T02:18:57 campushield[30472]: ACCOUNT_UNLOCKED user=admin1 ip=127.0.0.1 target=s2026002

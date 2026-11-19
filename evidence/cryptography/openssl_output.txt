@@ -1,0 +1,25 @@
+=== openssl version ===
+OpenSSL 3.5.6 7 Apr 2026 (Library: OpenSSL 3.5.6 7 Apr 2026)
+
+=== 1. SHA-256 with openssl dgst ===
+$ openssl dgst -sha256 data/synthetic/campus_records.csv
+SHA2-256(data/synthetic/campus_records.csv)= 31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac
+
+=== 2. Encrypt: AES-256-CBC, key derived from passphrase with PBKDF2 (100000 iterations, random salt) ===
+$ openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -in campus_records.csv -out records.ossl.enc -pass env:CS_LAB_PASS
+2528 bytes  demonstrations/cryptography/output/records.ossl.enc
+first 32 bytes of the encrypted file (starts with 'Salted__' + 8-byte salt):
+000000 53 61 6c 74 65 64 5f 5f a1 e4 89 02 77 c1 cf c2  >Salted__....w...<
+000010 4b ef 83 f2 ef 2f b4 60 ff fe 59 3e 94 12 18 8a  >K..../.`..Y>....<
+
+=== 3. Decrypt and compare ===
+$ openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -in records.ossl.enc -out ossl_decrypted.csv -pass env:CS_LAB_PASS
+cmp: decrypted file is IDENTICAL to the original
+SHA2-256(demonstrations/cryptography/output/ossl_decrypted.csv)= 31b32db9b45b593f19a7c4088b393e76f35a51641fb156024751b1a3db28c4ac
+
+=== 4. Wrong passphrase ===
+bad decrypt
+1C530000:error:1C800064:Provider routines:ossl_cipher_unpadblock:bad decrypt:../openssl-3.5.6/providers/implementations/ciphers/ciphercommon_block.c:107:
+decryption with the wrong passphrase failed (bad decrypt)
+Note: CBC has no authentication tag, so integrity must come from a separate hash/HMAC;
+AES-GCM in aes_gcm_demo.py gives both confidentiality and integrity.
