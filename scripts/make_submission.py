@@ -69,9 +69,11 @@ def main():
         "Demo_and_Speaker_Script.md      who presents what + live demo steps\n"
         "CampusShield_Source.zip         source code, scripts, synthetic data and evidence\n"
         f"                                (git archive of commit {head})\n"
-        "img/                            screenshots and diagrams used in the report\n\n"
+        "img/                            screenshots, Kali output renders, diagrams and 3 demo GIFs\n\n"
         "Run: pip install -r requirements.txt ; python scripts/init_db.py ; python scripts/run_app.py\n"
-        "Kali lab: sudo bash kali/run_kali_lab.sh   (see kali/README.md)\n", encoding="utf-8")
+        "Kali lab: bash kali/docker/run_lab_container.sh (or sudo bash kali/run_kali_lab.sh in a Kali VM)\n"
+        "Real Kali output (Nmap, firewall, permissions, pcaps): evidence/kali/ inside the source ZIP\n",
+        encoding="utf-8")
     print("  + submission/README.txt\nDone.")
 
 
