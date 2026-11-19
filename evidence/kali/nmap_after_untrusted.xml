@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.991 scan initiated Thu Nov 19 23:07:49 2026 as: /usr/lib/nmap/nmap -n -Pn -sS -sV -p- -T4 -&#45;max-retries 2 -&#45;min-rate 1500 -&#45;reason -oX /lab/evidence/kali/nmap_after_untrusted.xml 10.10.50.1 -->
+<nmaprun scanner="nmap" args="/usr/lib/nmap/nmap -n -Pn -sS -sV -p- -T4 -&#45;max-retries 2 -&#45;min-rate 1500 -&#45;reason -oX /lab/evidence/kali/nmap_after_untrusted.xml 10.10.50.1" start="1795129669" startstr="Thu Nov 19 23:07:49 2026" version="7.991" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="65535" services="1-65535"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<hosthint><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.50.1" addrtype="ipv4"/>
+<address addr="9E:50:37:6A:2E:49" addrtype="mac"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<host starttime="1795129670" endtime="1795129757"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.50.1" addrtype="ipv4"/>
+<address addr="9E:50:37:6A:2E:49" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<ports><extraports state="filtered" count="65535">
+<extrareasons reason="no-response" count="65535" proto="tcp" ports="1-65535"/>
+</extraports>
+</ports>
+<times srtt="23" rttvar="5000" to="100000"/>
+</host>
+<runstats><finished time="1795129757" timestr="Thu Nov 19 23:09:17 2026" summary="Nmap done at Thu Nov 19 23:09:17 2026; 1 IP address (1 host up) scanned in 87.90 seconds" elapsed="87.90" exit="success"/><hosts up="1" down="0" total="1"/>
+</runstats>
+</nmaprun>

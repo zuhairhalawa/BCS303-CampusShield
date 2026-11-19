@@ -1,0 +1,12 @@
+
+### 9. Firewall REMOVED then re-applied (shows the rule is what blocks access)
+
+$ iptables -S INPUT
+-P INPUT ACCEPT
+
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w 'untrusted -> :5000  HTTP %{http_code}  (firewall removed: reachable again)\n' http://10.10.50.1:5000/login
+untrusted -> :5000  HTTP 200  (firewall removed: reachable again)
+
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w '%{http_code}\n' http://10.10.50.1:5000/login || echo 'untrusted -> :5000  BLOCKED again (firewall re-applied)'
+000
+untrusted -> :5000  BLOCKED again (firewall re-applied)

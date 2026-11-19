@@ -1,0 +1,16 @@
+### Kali VMware VM settings (read on the Windows host, 2026-11-20 02:58)
+$ grep network/isolation settings in kali-linux-2026.2-vmware-amd64.vmx
+displayName = "Kali Fresh"
+guestOS = "debian10-64"
+ethernet0.connectionType = "nat"
+ethernet0.virtualDev = "e1000"
+ethernet0.present = "TRUE"
+isolation.tools.hgfs.disable = "TRUE"
+isolation.tools.dnd.disable = "TRUE"
+
+$ vmrun listSnapshots kali-linux-2026.2-vmware-amd64.vmx
+Total snapshots: 1
+Clean Kali - Updated
+
+Meaning: one virtual NIC in NAT mode (private VMware NAT subnet, not bridged to the LAN);
+shared folders (hgfs) and drag-and-drop are disabled, so the VM cannot read host files.

@@ -1,0 +1,8 @@
+### Container lab environment (recorded on the Docker host)
+$ docker image inspect campushield-kali-lab (base image and creation date)
+image id sha256:032c08b0a4b8fe9184ffe4d8ad102a1db4b747e58a0e294eb98caab273e99264  created 2026-11-19T22:53:01.649215897Z  os linux/amd64
+
+$ docker network inspect cs_lab_isolated
+name=cs_lab_isolated driver=bridge internal=true subnet=172.20.0.0/16
+internal=true means Docker gives this network no outbound route (no Internet, no host LAN).
+Published ports for the lab container: none (no -p option is used).

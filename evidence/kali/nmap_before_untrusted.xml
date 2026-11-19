@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.991 scan initiated Thu Nov 19 23:07:26 2026 as: /usr/lib/nmap/nmap -n -Pn -sS -sV -p- -T4 -&#45;max-retries 2 -&#45;min-rate 1500 -&#45;reason -oX /lab/evidence/kali/nmap_before_untrusted.xml 10.10.50.1 -->
+<nmaprun scanner="nmap" args="/usr/lib/nmap/nmap -n -Pn -sS -sV -p- -T4 -&#45;max-retries 2 -&#45;min-rate 1500 -&#45;reason -oX /lab/evidence/kali/nmap_before_untrusted.xml 10.10.50.1" start="1795129646" startstr="Thu Nov 19 23:07:26 2026" version="7.991" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="65535" services="1-65535"/>
+<verbose level="0"/>
+<debugging level="0"/>
+<hosthint><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.50.1" addrtype="ipv4"/>
+<address addr="9E:50:37:6A:2E:49" addrtype="mac"/>
+<hostnames>
+</hostnames>
+</hosthint>
+<host starttime="1795129646" endtime="1795129653"><status state="up" reason="arp-response" reason_ttl="0"/>
+<address addr="10.10.50.1" addrtype="ipv4"/>
+<address addr="9E:50:37:6A:2E:49" addrtype="mac"/>
+<hostnames>
+</hostnames>
+<ports><extraports state="closed" count="65533">
+<extrareasons reason="reset" count="65533" proto="tcp" ports="1-4999,5001-7999,8001-65535"/>
+</extraports>
+<port protocol="tcp" portid="5000"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="Werkzeug httpd" version="3.1.9" extrainfo="Python 3.14.10" method="probed" conf="10"><cpe>cpe:/a:python:python:3.14.10</cpe></service></port>
+<port protocol="tcp" portid="8000"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="SimpleHTTPServer" version="0.6" extrainfo="Python 3.14.10" method="probed" conf="10"><cpe>cpe:/a:python:simplehttpserver:0.6</cpe></service></port>
+</ports>
+<times srtt="2" rttvar="0" to="100000"/>
+</host>
+<runstats><finished time="1795129653" timestr="Thu Nov 19 23:07:33 2026" summary="Nmap done at Thu Nov 19 23:07:33 2026; 1 IP address (1 host up) scanned in 6.98 seconds" elapsed="6.98" exit="success"/><hosts up="1" down="0" total="1"/>
+</runstats>
+</nmaprun>

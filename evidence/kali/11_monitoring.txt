@@ -1,0 +1,41 @@
+
+### 11. Detect repeated failed logins (controlled burst from the staff zone)
+attempt 1: HTTP 401
+attempt 2: HTTP 401
+attempt 3: HTTP 401
+attempt 4: HTTP 401
+attempt 5: HTTP 401
+attempt 6: HTTP 401
+
+$ tail -n 8 /opt/campushield/logs/campushield.log
+2026-11-19T23:11:09 campushield[668]: LOGIN_FAILED user=s2026001 ip=10.10.60.10 attempts=2
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=1
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=2
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=3
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=4
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=5
+2026-11-19T23:11:22 campushield[733]: ACCOUNT_LOCKED user=s2026002 ip=10.10.60.10 until=2026-11-19T23:26:22
+2026-11-19T23:11:22 campushield[733]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=10.10.60.10 locked_until=2026-11-19T23:26:22
+
+$ bash /lab/monitoring/detect_failed_logins.sh /opt/campushield/logs/campushield.log 5 10
+== CampusShield failed-login detector ==
+log: /opt/campushield/logs/campushield.log
+rules: BRUTE_FORCE >= 5 failures from one IP within 10 min; PASSWORD_SPRAY >= 3 usernames from one IP
+run at 2026-11-19T23:11:24 on kali-lab
+
+failed logins found: 8 from 1 source IP(s)
+
+source IP       failures    max in window  usernames tried
+10.10.60.10            8                8  s2026001 s2026002
+
+ALERT BRUTE_FORCE ip=10.10.60.10 failures=8 between 2026-11-19T23:10:54 and 2026-11-19T23:11:22 users=s2026001 s2026002
+
+ACCOUNT_LOCKED events: 1 (s2026002)
+ACCESS_DENIED events : 0
+alerts raised: 1 (appended to /lab/monitoring/alerts.log)
+
+Firewall evidence of blocked probes (packets dropped by the last rule of CS_LAB_IN):
+
+$ iptables -L CS_LAB_IN -v -n -x | grep -E 'DROP|LOG'
+       3      180 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            limit: avg 20/min burst 5 LOG flags 0 level 4 prefix "CS-FW-DROP "
+       3      180 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           

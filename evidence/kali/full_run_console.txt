@@ -1,0 +1,515 @@
+
+### 0. Environment and tools
+
+$ date
+Thu Nov 19 23:07:19 UTC 2026
+
+$ uname -a
+Linux kali-lab 5.15.167.4-microsoft-standard-WSL2 #1 SMP Tue Nov 5 00:21:55 UTC 2024 x86_64 GNU/Linux
+
+$ grep PRETTY_NAME /etc/os-release
+PRETTY_NAME="Kali GNU/Linux Rolling"
+
+$ systemd-detect-virt || true
+bash: line 1: systemd-detect-virt: command not found
+
+$ nmap --version | head -1; tshark --version | head -1; sqlite3 --version; openssl version; python3 --version
+Nmap version 7.991 ( https://nmap.org )
+Running as user "root" and group "root". This could be dangerous.
+TShark (Wireshark) 4.6.9.
+3.53.4 2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e0945alt1 (64-bit)
+OpenSSL 3.6.5 29 Sep 2026 (Library: OpenSSL 3.6.5 29 Sep 2026)
+Python 3.14.10
+
+### 1. Isolated lab network (Task 1 - lab isolation evidence)
+Kali lab host interfaces and routes (in the VM run this is the VM; in the container run, the container):
+
+$ ip -br addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+eth0@if16        UP             172.20.0.2/16 
+cs-untr-h@if3    UP             10.10.50.1/24 fe80::9c50:37ff:fe6a:2e49/64 
+cs-staff-h@if5   UP             10.10.60.1/24 fe80::3c83:48ff:fe08:bc07/64 
+
+$ ip route
+10.10.50.0/24 dev cs-untr-h proto kernel scope link src 10.10.50.1 
+10.10.60.0/24 dev cs-staff-h proto kernel scope link src 10.10.60.1 
+172.20.0.0/16 dev eth0 proto kernel scope link src 172.20.0.2 
+
+$ ip netns list
+cs_untrusted (id: 1)
+cs_staff (id: 2)
+Each lab zone only has a route to its own /24 - no default gateway, no Internet:
+
+$ ip netns exec cs_untrusted ip -br addr
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+cs-untr-n@if4    UP             10.10.50.66/24 fe80::b03d:1bff:feb4:95c9/64 
+
+$ ip netns exec cs_untrusted ip route
+10.10.50.0/24 dev cs-untr-n proto kernel scope link src 10.10.50.66 
+
+$ ip netns exec cs_staff ip route
+10.10.60.0/24 dev cs-staff-n proto kernel scope link src 10.10.60.10 
+
+$ ip netns exec cs_untrusted ip route get 1.1.1.1 || echo '=> no route: the untrusted zone cannot leave the lab'
+RTNETLINK answers: Network is unreachable
+=> no route: the untrusted zone cannot leave the lab
+
+$ ip netns exec cs_untrusted ip route get 10.10.60.10 || echo '=> no route: zones cannot reach each other directly'
+RTNETLINK answers: Network is unreachable
+=> no route: zones cannot reach each other directly
+
+$ ip netns exec cs_untrusted ping -c 2 -W 1 10.10.50.1
+PING 10.10.50.1 (10.10.50.1) 56(84) bytes of data.
+64 bytes from 10.10.50.1: icmp_seq=1 ttl=64 time=0.098 ms
+64 bytes from 10.10.50.1: icmp_seq=2 ttl=64 time=0.037 ms
+
+--- 10.10.50.1 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1066ms
+rtt min/avg/max/mdev = 0.037/0.067/0.098/0.030 ms
+
+### 2. Baseline deployment (intentionally weak, as found in the preliminary review)
+
+$ env CAMPUSHIELD_DB=/opt/campushield/data/campushield.db python3 /opt/campushield/scripts/init_db.py
+students         20 rows
+users             5 rows
+courses           4 rows
+registrations    60 rows
+attendance      360 rows
+Database: /opt/campushield/data/campushield.db
+Lab credentials written to /opt/campushield/data/lab_credentials.txt (git-ignored)
+Baseline problems: app runs as root, vulnerable build, bound to 0.0.0.0,
+an extra 'backup share' (python http.server :8000) publishes the data folder, files are 666/777.
+
+$ ls -la /opt/campushield/data /opt/campushield/logs
+/opt/campushield/data:
+total 76
+drwxrwxrwx 2 root root  4096 Nov 19 23:07 .
+drwxr-xr-x 6 root root  4096 Nov 19 23:07 ..
+-rw-rw-rw- 1 root root 61440 Nov 19 23:07 campushield.db
+-rw-rw-rw- 1 root root   274 Nov 19 23:07 lab_credentials.txt
+
+/opt/campushield/logs:
+total 8
+drwxrwxrwx 2 root root 4096 Nov 19 23:07 .
+drwxr-xr-x 6 root root 4096 Nov 19 23:07 ..
+-rw-r--r-- 1 root root    0 Nov 19 23:07 campushield.log
+
+$ ss -ltnp | grep -E ':(5000|8000) '
+LISTEN 0      5            0.0.0.0:8000       0.0.0.0:*    users:(("python3",pid=134,fd=3))
+LISTEN 0      128          0.0.0.0:5000       0.0.0.0:*    users:(("python3",pid=128,fd=4))
+
+$ ps -o user,pid,cmd -C python3 | grep -E 'run_app|http.server'
+root       128 python3 /opt/campushield/scripts/run_app.py --mode vulnerable --host 0.0.0.0 --port 5000 --allow-lab-exposure
+root       134 python3 -m http.server 8000 --bind 0.0.0.0
+
+$ iptables -S
+-P INPUT ACCEPT
+-P FORWARD ACCEPT
+-P OUTPUT ACCEPT
+
+### 3. Nmap BEFORE hardening (scanner in the unauthorised zone)
+
+$ ip netns exec cs_untrusted nmap -n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason -oX /lab/evidence/kali/nmap_before_untrusted.xml 10.10.50.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:07 +0000
+Nmap scan report for 10.10.50.1
+Host is up, received arp-response (0.0000020s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE REASON         VERSION
+5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+8000/tcp open  http    syn-ack ttl 64 SimpleHTTPServer 0.6 (Python 3.14.10)
+MAC Address: 9E:50:37:6A:2E:49 (Unknown)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 6.98 seconds
+
+Safe NSE scripts (default/safe category, read-only HTTP requests):
+
+$ ip netns exec cs_untrusted nmap -n -Pn -p 5000,8000 --script http-title,http-headers,http-methods 10.10.50.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:07 +0000
+Nmap scan report for 10.10.50.1
+Host is up (0.000022s latency).
+
+PORT     STATE SERVICE
+5000/tcp open  upnp
+8000/tcp open  http-alt
+|_http-title: Directory listing for /
+| http-methods: 
+|_  Supported Methods: GET HEAD
+| http-headers: 
+|   Server: SimpleHTTP/0.6 Python/3.14.10
+|   Date: Thu, 19 Nov 2026 23:07:33 GMT
+|   Content-type: text/html; charset=utf-8
+|   Content-Length: 372
+|   
+|_  (Request type: HEAD)
+MAC Address: 9E:50:37:6A:2E:49 (Unknown)
+
+Nmap done: 1 IP address (1 host up) scanned in 0.34 seconds
+
+### 4. Non-destructive validation of the weaknesses
+4a. Backup share: is directory listing enabled and is the database downloadable?
+
+$ ip netns exec cs_untrusted curl -s http://10.10.50.1:8000/ | grep -o 'href="[^"]*"'
+href="campushield.db"
+href="lab_credentials.txt"
+Only the response headers are requested (HEAD) - no file contents are downloaded:
+
+$ ip netns exec cs_untrusted curl -sI http://10.10.50.1:8000/campushield.db
+HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.14.10
+Date: Thu, 19 Nov 2026 23:07:33 GMT
+Content-type: application/octet-stream
+Content-Length: 61440
+Last-Modified: Thu, 19 Nov 2026 23:07:23 GMT
+
+msfconsole not installed - validation above uses curl/nmap only.
+
+4c. SQL injection reachable from the unauthorised zone (student account, vulnerable build)
+login s2026001 from 10.10.50.66 -> HTTP 302
+
+$ ip netns exec cs_untrusted curl -s -b /tmp/tmp.L57NCa613p -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.50.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+360 row(s) returned
+
+### 5. Linux users, groups and least-privilege file permissions
+Terminated                 python3 -m http.server $SHARE_PORT --bind 0.0.0.0 > /dev/null 2>&1
+
+$ id cs_app
+uid=999(cs_app) gid=999(cs_app) groups=999(cs_app)
+
+$ id cs_registrar
+uid=1000(cs_registrar) gid=1002(cs_registrar) groups=1002(cs_registrar),1000(cs_records)
+
+$ id cs_admin
+uid=1001(cs_admin) gid=1003(cs_admin) groups=1003(cs_admin),1001(cs_audit)
+
+$ id cs_student
+uid=1002(cs_student) gid=1004(cs_student) groups=1004(cs_student)
+
+BEFORE (baseline 666/777): can the unauthorised OS account read the student database?
+
+$ ls -l /opt/campushield/data/campushield.db
+-rw-rw-rw- 1 root root 61440 Nov 19 23:07 /opt/campushield/data/campushield.db
+
+$ runuser -u cs_student -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) AS students_readable FROM students;'
+20
+
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' && echo '=> cs_student could WRITE to the application log'
+sh: 1: cannot create /opt/campushield/logs/campushield.log: Permission denied
+
+APPLY least privilege:
+
+$ chown -R root:root /opt/campushield/app /opt/campushield/scripts && chmod -R u=rwX,go=rX /opt/campushield/app /opt/campushield/scripts
+
+$ chown cs_app:cs_records /opt/campushield/data && chmod 750 /opt/campushield/data
+
+$ chown cs_app:cs_records /opt/campushield/data/campushield.db && chmod 640 /opt/campushield/data/campushield.db
+
+$ chown cs_app:cs_app /opt/campushield/data/lab_credentials.txt && chmod 600 /opt/campushield/data/lab_credentials.txt
+
+$ chown -R cs_app:cs_audit /opt/campushield/logs && chmod 750 /opt/campushield/logs && find /opt/campushield/logs -type f -exec chmod 640 {} +
+
+$ ls -la /opt/campushield /opt/campushield/data /opt/campushield/logs
+/opt/campushield:
+total 28
+drwxr-xr-x 6 root   root       4096 Nov 19 23:07 .
+drwxr-xr-x 1 root   root       4096 Nov 19 23:07 ..
+drwxr-xr-x 5 root   root       4096 Nov 19 23:07 app
+drwxr-x--- 2 cs_app cs_records 4096 Nov 19 23:07 data
+drwxr-x--- 2 cs_app cs_audit   4096 Nov 19 23:07 logs
+-rwxr-xr-x 1 root   root         54 Nov 19 23:07 requirements.txt
+drwxr-xr-x 2 root   root       4096 Nov 19 23:07 scripts
+
+/opt/campushield/data:
+total 76
+drwxr-x--- 2 cs_app cs_records  4096 Nov 19 23:07 .
+drwxr-xr-x 6 root   root        4096 Nov 19 23:07 ..
+-rw-r----- 1 cs_app cs_records 61440 Nov 19 23:07 campushield.db
+-rw------- 1 cs_app cs_app       274 Nov 19 23:07 lab_credentials.txt
+
+/opt/campushield/logs:
+total 12
+drwxr-x--- 2 cs_app cs_audit 4096 Nov 19 23:07 .
+drwxr-xr-x 6 root   root     4096 Nov 19 23:07 ..
+-rw-r----- 1 cs_app cs_audit  214 Nov 19 23:07 campushield.log
+
+AFTER - authorised vs unauthorised access tests:
+
+$ runuser -u cs_registrar -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) AS students_readable FROM students;' && echo '=> cs_registrar (cs_records) ALLOWED'
+20
+=> cs_registrar (cs_records) ALLOWED
+
+$ runuser -u cs_student -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) FROM students;' || echo '=> cs_student DENIED'
+Error: unable to open database "/opt/campushield/data/campushield.db": unable to open database file
+=> cs_student DENIED
+
+$ runuser -u cs_student -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_student DENIED'
+cat: /opt/campushield/data/lab_credentials.txt: Permission denied
+=> cs_student DENIED
+
+$ runuser -u cs_registrar -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_registrar DENIED (only the service account)'
+cat: /opt/campushield/data/lab_credentials.txt: Permission denied
+=> cs_registrar DENIED (only the service account)
+
+$ runuser -u cs_admin -- tail -n 2 /opt/campushield/logs/campushield.log && echo '=> cs_admin (cs_audit) ALLOWED to read logs'
+2026-11-19T23:07:33 campushield[128]: LOGIN_SUCCESS user=s2026001 ip=10.10.50.66 role=student
+2026-11-19T23:07:33 campushield[128]: ATTENDANCE_QUERY user=s2026001 ip=10.10.50.66 course="BCS210' OR '1'='1" rows=360
+=> cs_admin (cs_audit) ALLOWED to read logs
+
+$ runuser -u cs_registrar -- tail -n 1 /opt/campushield/logs/campushield.log || echo '=> cs_registrar DENIED (separation of duties)'
+tail: cannot open '/opt/campushield/logs/campushield.log' for reading: Permission denied
+=> cs_registrar DENIED (separation of duties)
+
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' || echo '=> cs_student DENIED write to log'
+sh: 1: cannot create /opt/campushield/logs/campushield.log: Permission denied
+=> cs_student DENIED write to log
+
+### 6. Remove unnecessary service, run secure build as cs_app, host firewall
+Initial firewall state:
+
+$ iptables -S
+-P INPUT ACCEPT
+-P FORWARD ACCEPT
+-P OUTPUT ACCEPT
+Backup share on :8000 is NOT restarted (unnecessary service removed).
+
+$ ss -ltnp | grep -E ':(5000|8000) '
+LISTEN 0      128          0.0.0.0:5000       0.0.0.0:*   
+
+$ ps -o user,pid,cmd -C python3 | grep run_app
+cs_app     432 python3 /opt/campushield/scripts/run_app.py --mode secure --host 0.0.0.0 --port 5000 --allow-lab-exposure
+
+Firewall rules applied (only the lab veth interfaces are affected):
+
+$ iptables -S CS_LAB_IN
+-N CS_LAB_IN
+-A CS_LAB_IN -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A CS_LAB_IN -s 10.10.60.0/24 -p tcp -m tcp --dport 5000 -m conntrack --ctstate NEW -j ACCEPT
+-A CS_LAB_IN -m limit --limit 20/min -j LOG --log-prefix "CS-FW-DROP "
+-A CS_LAB_IN -j DROP
+
+$ iptables -S INPUT | head -5
+-P INPUT ACCEPT
+-A INPUT -i cs-staff-h -j CS_LAB_IN
+-A INPUT -i cs-untr-h -j CS_LAB_IN
+
+Connectivity checks:
+
+$ ip netns exec cs_staff curl -s -m 5 -o /dev/null -w 'staff zone   -> :5000  HTTP %{http_code}\n' http://10.10.60.1:5000/login
+staff zone   -> :5000  HTTP 200
+
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w 'untrusted    -> :5000  HTTP %{http_code}\n' http://10.10.50.1:5000/login || echo '=> untrusted zone BLOCKED (timeout)'
+untrusted    -> :5000  HTTP 000
+=> untrusted zone BLOCKED (timeout)
+
+$ ip netns exec cs_staff nc -zv -w 3 10.10.60.1 8000 || echo '=> :8000 closed/blocked'
+nc: connect to 10.10.60.1 port 8000 (tcp) timed out: Operation now in progress
+=> :8000 closed/blocked
+
+$ ip netns exec cs_staff nc -zv -w 3 10.10.60.1 22 || echo '=> other ports from staff zone blocked'
+nc: connect to 10.10.60.1 port 22 (tcp) timed out: Operation now in progress
+=> other ports from staff zone blocked
+
+### 7. Nmap AFTER hardening - same command as step 3
+
+$ ip netns exec cs_untrusted nmap -n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason -oX /lab/evidence/kali/nmap_after_untrusted.xml 10.10.50.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:07 +0000
+Nmap scan report for 10.10.50.1
+Host is up, received arp-response (0.000023s latency).
+All 65535 scanned ports on 10.10.50.1 are in ignored states.
+Not shown: 65535 filtered tcp ports (no-response)
+MAC Address: 9E:50:37:6A:2E:49 (Unknown)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 87.90 seconds
+
+Same scan from the authorised staff zone:
+
+$ ip netns exec cs_staff nmap -n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason -oX /lab/evidence/kali/nmap_after_staff.xml 10.10.60.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:09 +0000
+Nmap scan report for 10.10.60.1
+Host is up, received arp-response (0.000037s latency).
+Not shown: 65534 filtered tcp ports (no-response)
+PORT     STATE SERVICE REASON         VERSION
+5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+MAC Address: 3E:83:48:08:BC:07 (Unknown)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 88.26 seconds
+
+Packets matched by each firewall rule (pkts/bytes counters):
+
+$ iptables -L CS_LAB_IN -v -n
+Chain CS_LAB_IN (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+  113  6463 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+   69  3196 ACCEPT     tcp  --  *      *       10.10.60.0/24        0.0.0.0/0            tcp dpt:5000 ctstate NEW
+   65  2972 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            limit: avg 20/min burst 5 LOG flags 0 level 4 prefix "CS-FW-DROP "
+ 262K   12M DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+$ dmesg 2>/dev/null | grep CS-FW-DROP | tail -n 5 || echo '(kernel log not readable here - the DROP counter above is the evidence)'
+
+### 8. Re-test SQL injection against the secure build from the authorised zone
+login s2026001 from 10.10.60.10 -> HTTP 302
+
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode 'course=BCS210' http://10.10.60.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+6 row(s) returned
+
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.60.1:5000/attendance | grep -oE '[0-9]+ row\(s\) returned|Course code must look like BCS303'
+Course code must look like BCS303
+0 row(s) returned
+
+### 9. Firewall REMOVED then re-applied (shows the rule is what blocks access)
+
+$ iptables -S INPUT
+-P INPUT ACCEPT
+
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w 'untrusted -> :5000  HTTP %{http_code}  (firewall removed: reachable again)\n' http://10.10.50.1:5000/login
+untrusted -> :5000  HTTP 200  (firewall removed: reachable again)
+
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w '%{http_code}\n' http://10.10.50.1:5000/login || echo 'untrusted -> :5000  BLOCKED again (firewall re-applied)'
+000
+untrusted -> :5000  BLOCKED again (firewall re-applied)
+
+### 10. Traffic capture with tshark on the staff-zone interface
+10a. HTTP login with a deliberately WRONG password (no real lab password is captured)
+
+$ tshark -r /lab/evidence/kali/http_login.pcap -q -z conv,tcp
+Running as user "root" and group "root". This could be dangerous.
+================================================================================
+TCP Conversations
+Filter:<No Filter>
+                                                           |       <-      | |       ->      | |     Total     |    Relative    |   Duration   |
+                                                           | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |      Start     |              |
+10.10.60.10:49986          <-> 10.10.60.1:5000                  5 1830 bytes       7 667 bytes      12 2497 bytes     0.000000000         0.1077
+10.10.60.10:50000          <-> 10.10.60.1:5000                  5 1732 bytes       7 554 bytes      12 2286 bytes     0.115137384         0.0018
+================================================================================
+
+$ tshark -r /lab/evidence/kali/http_login.pcap -Y http.request -T fields -E header=y -e frame.number -e ip.src -e ip.dst -e tcp.dstport -e http.request.method -e http.request.uri -e http.file_data
+Running as user "root" and group "root". This could be dangerous.
+frame.number	ip.src	ip.dst	tcp.dstport	http.request.method	http.request.uri	http.file_data
+4	10.10.60.10	10.10.60.1	5000	POST	/login	757365726e616d653d73323032363030312670617373776f72643d57726f6e672d44656d6f2d5061737331
+16	10.10.60.10	10.10.60.1	5000	GET	/login	
+
+10b. Same login over HTTPS (self-signed lab certificate made with openssl)
+
+$ openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj /CN=campushield.lab -keyout /opt/campushield/tls/key.pem -out /opt/campushield/tls/cert.pem
+.....+......+.........+.+......+........+++++++++++++++++++++++++++++++++++++++*....+......+...+....+...+..............+++++++++++++++++++++++++++++++++++++++*..+.+............+..+............+.+..+.+......+........+.......+.....+.+..+............+......+..........+............+..+......+...+.+.........+..+...+...............+.+.....+.....................+.........+.+............+...+...+......+.....+..........+...+.....+..........+.....+.+.....+......+.+...+.................+.............+..+...+.......+.....+.......+......+......+..................+..+....+...........+...+...+.........+.++++++
+..+......+..........+......+++++++++++++++++++++++++++++++++++++++*....+.......+...+++++++++++++++++++++++++++++++++++++++*...................+.....+....+......+......+..+............+...+.+.....+..........+...........+......+..........+........+....+......+..+....+.....+....+..+...+.......+...+.........+.....+.+.....+.....................+..........+.........+..+..........+..+.+.........+........+.......+............+...+..+.+..+......+.+........+.......+........+...+...+..........+..+...+..........+..+.........+...+.+......+...+...+..+...+.........+...+.............+...+...........+.........+....+......+.................+.......+.....+...+.......+...+..+.+.....+.+.......................+..........+...........+......+.+..................+......+...........+....+........+.+...........+.........................+...+...+..+......+......+....+.........+..+.+.....+.........+...+.+..............+......+....+..+....+............+..+...+....+.....+.+..+................+.........+...+..+.+.........+..+...+.......+...+...+.....+....+.....+.........+.+.........+.....+.+.....+...+...+.............+...............+......+...........+............+...+...+.+...+......+......+......+........+.........+.............+.....+.........+.+..............+......+....+........+...+...+.........+.+......+......+..+.+..+...+.......+.........+.....+.+..............+...+..........+..+................+..+...+....+..............+.+.....+....+..+....+...+..+......+.............+..+.........+.+............+...........+.........+.......+.....+....+...........+...+.......+.....+.+..+......+.+..............+....+......+..+.......+...........+.......+...+............+..+.............+........+....+.....+...+...+.......+............+........+....+...+..+....+..+...+.......+........+......+..........+.....................+..+...+.......+......+..+............+.+..............+.+.........+...+.................+............+......+...+.+...+............+...+..+....+...........+...................+..+...+....+...+..+..........+..+.+...+......+.....+...+..........+..+.+........+....+........+...+.........+.+......+........+................+....................+......+.+.....+.......+.....+......+.+......+........+...................+...........+....+..................+..+......+......+...+.......+...........+...+.+...........+.......+.....+...+.......+...........+.+...+...+..+.+.....+....+..+.+...+...........+....+......+...+..+......+.......+..+..................+.+..+.........................+..+...+.......+..+...+.......+......+..+............+......+...+...............................+...+...........+.+...+...+...+.....+....+..+...+.+.....+.+..............+.......+..+...+.......+...+........+......+..........+.....+...+...+...+........................+.......+........+.................................+.......+......+.........+......+......+.........+............+.........+.....+...+.............+........+......+.........+.....................+....+.....+................+......+..+............+.+...+......+......+..+...+.........+...................+......+...+..+...+.+..+...+....+...+..+.......+.....+...+......+.......+..+.......+...+..................+........+.........+.+..............++++++
+-----
+
+$ tshark -r /lab/evidence/kali/https_login.pcap -q -z conv,tcp
+Running as user "root" and group "root". This could be dangerous.
+================================================================================
+TCP Conversations
+Filter:<No Filter>
+                                                           |       <-      | |       ->      | |     Total     |    Relative    |   Duration   |
+                                                           | Frames  Bytes | | Frames  Bytes | | Frames  Bytes |      Start     |              |
+10.10.60.10:59874          <-> 10.10.60.1:5000                  9 5085 bytes      12 2798 bytes      21 7883 bytes     0.000000000         0.1272
+================================================================================
+
+$ tshark -r /lab/evidence/kali/https_login.pcap -Y tls -T fields -E header=y -e frame.number -e ip.src -e ip.dst -e tls.record.content_type -e tls.handshake.type
+Running as user "root" and group "root". This could be dangerous.
+frame.number	ip.src	ip.dst	tls.record.content_type	tls.handshake.type
+
+$ tshark -r /lab/evidence/kali/https_login.pcap -Y http.request | wc -l | sed 's/^/HTTP requests readable in the HTTPS capture: /'
+Running as user "root" and group "root". This could be dangerous.
+HTTP requests readable in the HTTPS capture: 0
+
+### 11. Detect repeated failed logins (controlled burst from the staff zone)
+attempt 1: HTTP 401
+attempt 2: HTTP 401
+attempt 3: HTTP 401
+attempt 4: HTTP 401
+attempt 5: HTTP 401
+attempt 6: HTTP 401
+
+$ tail -n 8 /opt/campushield/logs/campushield.log
+2026-11-19T23:11:09 campushield[668]: LOGIN_FAILED user=s2026001 ip=10.10.60.10 attempts=2
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=1
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=2
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=3
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=4
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=5
+2026-11-19T23:11:22 campushield[733]: ACCOUNT_LOCKED user=s2026002 ip=10.10.60.10 until=2026-11-19T23:26:22
+2026-11-19T23:11:22 campushield[733]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=10.10.60.10 locked_until=2026-11-19T23:26:22
+
+$ bash /lab/monitoring/detect_failed_logins.sh /opt/campushield/logs/campushield.log 5 10
+== CampusShield failed-login detector ==
+log: /opt/campushield/logs/campushield.log
+rules: BRUTE_FORCE >= 5 failures from one IP within 10 min; PASSWORD_SPRAY >= 3 usernames from one IP
+run at 2026-11-19T23:11:24 on kali-lab
+
+failed logins found: 8 from 1 source IP(s)
+
+source IP       failures    max in window  usernames tried
+10.10.60.10            8                8  s2026001 s2026002
+
+ALERT BRUTE_FORCE ip=10.10.60.10 failures=8 between 2026-11-19T23:10:54 and 2026-11-19T23:11:22 users=s2026001 s2026002
+
+ACCOUNT_LOCKED events: 1 (s2026002)
+ACCESS_DENIED events : 0
+alerts raised: 1 (appended to /lab/monitoring/alerts.log)
+
+Firewall evidence of blocked probes (packets dropped by the last rule of CS_LAB_IN):
+
+$ iptables -L CS_LAB_IN -v -n -x | grep -E 'DROP|LOG'
+       3      180 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            limit: avg 20/min burst 5 LOG flags 0 level 4 prefix "CS-FW-DROP "
+       3      180 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+### SUMMARY (key lines pulled from the step files)
+
+$ grep -E '^[0-9]+/tcp' /lab/evidence/kali/03_nmap_before.txt | sed 's/^/BEFORE untrusted: /'
+BEFORE untrusted: 5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+BEFORE untrusted: 8000/tcp open  http    syn-ack ttl 64 SimpleHTTPServer 0.6 (Python 3.14.10)
+BEFORE untrusted: 5000/tcp open  upnp
+BEFORE untrusted: 8000/tcp open  http-alt
+
+$ grep -E '^[0-9]+/tcp|ignored states|filtered' /lab/evidence/kali/07_nmap_after.txt | sed 's/^/AFTER: /'
+AFTER: All 65535 scanned ports on 10.10.50.1 are in ignored states.
+AFTER: Not shown: 65535 filtered tcp ports (no-response)
+AFTER: Not shown: 65534 filtered tcp ports (no-response)
+AFTER: 5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+
+$ grep -hE 'row\(s\) returned|Course code must' /lab/evidence/kali/04_validation.txt /lab/evidence/kali/08_app_retest.txt
+$ ip netns exec cs_untrusted curl -s -b /tmp/tmp.L57NCa613p -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.50.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+360 row(s) returned
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode 'course=BCS210' http://10.10.60.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+6 row(s) returned
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.60.1:5000/attendance | grep -oE '[0-9]+ row\(s\) returned|Course code must look like BCS303'
+Course code must look like BCS303
+0 row(s) returned
+
+$ grep -hE '=>' /lab/evidence/kali/05_linux_permissions.txt /lab/evidence/kali/06_firewall.txt /lab/evidence/kali/09_firewall_removed.txt
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' && echo '=> cs_student could WRITE to the application log'
+$ runuser -u cs_registrar -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) AS students_readable FROM students;' && echo '=> cs_registrar (cs_records) ALLOWED'
+=> cs_registrar (cs_records) ALLOWED
+$ runuser -u cs_student -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) FROM students;' || echo '=> cs_student DENIED'
+=> cs_student DENIED
+$ runuser -u cs_student -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_student DENIED'
+=> cs_student DENIED
+$ runuser -u cs_registrar -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_registrar DENIED (only the service account)'
+=> cs_registrar DENIED (only the service account)
+$ runuser -u cs_admin -- tail -n 2 /opt/campushield/logs/campushield.log && echo '=> cs_admin (cs_audit) ALLOWED to read logs'
+=> cs_admin (cs_audit) ALLOWED to read logs
+$ runuser -u cs_registrar -- tail -n 1 /opt/campushield/logs/campushield.log || echo '=> cs_registrar DENIED (separation of duties)'
+=> cs_registrar DENIED (separation of duties)
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' || echo '=> cs_student DENIED write to log'
+=> cs_student DENIED write to log
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w 'untrusted    -> :5000  HTTP %{http_code}\n' http://10.10.50.1:5000/login || echo '=> untrusted zone BLOCKED (timeout)'
+=> untrusted zone BLOCKED (timeout)
+$ ip netns exec cs_staff nc -zv -w 3 10.10.60.1 8000 || echo '=> :8000 closed/blocked'
+=> :8000 closed/blocked
+$ ip netns exec cs_staff nc -zv -w 3 10.10.60.1 22 || echo '=> other ports from staff zone blocked'
+=> other ports from staff zone blocked
+
+$ grep -h 'HTTP' /lab/evidence/kali/06_firewall.txt | grep zone
+$ ip netns exec cs_staff curl -s -m 5 -o /dev/null -w 'staff zone   -> :5000  HTTP %{http_code}\n' http://10.10.60.1:5000/login
+staff zone   -> :5000  HTTP 200
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w 'untrusted    -> :5000  HTTP %{http_code}\n' http://10.10.50.1:5000/login || echo '=> untrusted zone BLOCKED (timeout)'
+
+$ grep -h 'ALERT' /lab/evidence/kali/11_monitoring.txt
+ALERT BRUTE_FORCE ip=10.10.60.10 failures=8 between 2026-11-19T23:10:54 and 2026-11-19T23:11:22 users=s2026001 s2026002
+
+Done. Evidence is in /lab/evidence/kali . Lab network and firewall chain were removed;
+users/groups stay for screenshots (remove with: sudo bash kali/run_kali_lab.sh cleanup).
+container exit code: 0 (container removed, isolated network removed)

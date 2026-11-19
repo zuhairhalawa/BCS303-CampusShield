@@ -1,0 +1,39 @@
+
+### 3. Nmap BEFORE hardening (scanner in the unauthorised zone)
+
+$ ip netns exec cs_untrusted nmap -n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason -oX /lab/evidence/kali/nmap_before_untrusted.xml 10.10.50.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:07 +0000
+Nmap scan report for 10.10.50.1
+Host is up, received arp-response (0.0000020s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE REASON         VERSION
+5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+8000/tcp open  http    syn-ack ttl 64 SimpleHTTPServer 0.6 (Python 3.14.10)
+MAC Address: 9E:50:37:6A:2E:49 (Unknown)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 6.98 seconds
+
+Safe NSE scripts (default/safe category, read-only HTTP requests):
+
+$ ip netns exec cs_untrusted nmap -n -Pn -p 5000,8000 --script http-title,http-headers,http-methods 10.10.50.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:07 +0000
+Nmap scan report for 10.10.50.1
+Host is up (0.000022s latency).
+
+PORT     STATE SERVICE
+5000/tcp open  upnp
+8000/tcp open  http-alt
+|_http-title: Directory listing for /
+| http-methods: 
+|_  Supported Methods: GET HEAD
+| http-headers: 
+|   Server: SimpleHTTP/0.6 Python/3.14.10
+|   Date: Thu, 19 Nov 2026 23:07:33 GMT
+|   Content-type: text/html; charset=utf-8
+|   Content-Length: 372
+|   
+|_  (Request type: HEAD)
+MAC Address: 9E:50:37:6A:2E:49 (Unknown)
+
+Nmap done: 1 IP address (1 host up) scanned in 0.34 seconds

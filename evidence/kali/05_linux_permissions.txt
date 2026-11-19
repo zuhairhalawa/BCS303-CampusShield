@@ -1,0 +1,92 @@
+
+### 5. Linux users, groups and least-privilege file permissions
+
+$ id cs_app
+uid=999(cs_app) gid=999(cs_app) groups=999(cs_app)
+
+$ id cs_registrar
+uid=1000(cs_registrar) gid=1002(cs_registrar) groups=1002(cs_registrar),1000(cs_records)
+
+$ id cs_admin
+uid=1001(cs_admin) gid=1003(cs_admin) groups=1003(cs_admin),1001(cs_audit)
+
+$ id cs_student
+uid=1002(cs_student) gid=1004(cs_student) groups=1004(cs_student)
+
+BEFORE (baseline 666/777): can the unauthorised OS account read the student database?
+
+$ ls -l /opt/campushield/data/campushield.db
+-rw-rw-rw- 1 root root 61440 Nov 19 23:07 /opt/campushield/data/campushield.db
+
+$ runuser -u cs_student -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) AS students_readable FROM students;'
+20
+
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' && echo '=> cs_student could WRITE to the application log'
+sh: 1: cannot create /opt/campushield/logs/campushield.log: Permission denied
+
+APPLY least privilege:
+
+$ chown -R root:root /opt/campushield/app /opt/campushield/scripts && chmod -R u=rwX,go=rX /opt/campushield/app /opt/campushield/scripts
+
+$ chown cs_app:cs_records /opt/campushield/data && chmod 750 /opt/campushield/data
+
+$ chown cs_app:cs_records /opt/campushield/data/campushield.db && chmod 640 /opt/campushield/data/campushield.db
+
+$ chown cs_app:cs_app /opt/campushield/data/lab_credentials.txt && chmod 600 /opt/campushield/data/lab_credentials.txt
+
+$ chown -R cs_app:cs_audit /opt/campushield/logs && chmod 750 /opt/campushield/logs && find /opt/campushield/logs -type f -exec chmod 640 {} +
+
+$ ls -la /opt/campushield /opt/campushield/data /opt/campushield/logs
+/opt/campushield:
+total 28
+drwxr-xr-x 6 root   root       4096 Nov 19 23:07 .
+drwxr-xr-x 1 root   root       4096 Nov 19 23:07 ..
+drwxr-xr-x 5 root   root       4096 Nov 19 23:07 app
+drwxr-x--- 2 cs_app cs_records 4096 Nov 19 23:07 data
+drwxr-x--- 2 cs_app cs_audit   4096 Nov 19 23:07 logs
+-rwxr-xr-x 1 root   root         54 Nov 19 23:07 requirements.txt
+drwxr-xr-x 2 root   root       4096 Nov 19 23:07 scripts
+
+/opt/campushield/data:
+total 76
+drwxr-x--- 2 cs_app cs_records  4096 Nov 19 23:07 .
+drwxr-xr-x 6 root   root        4096 Nov 19 23:07 ..
+-rw-r----- 1 cs_app cs_records 61440 Nov 19 23:07 campushield.db
+-rw------- 1 cs_app cs_app       274 Nov 19 23:07 lab_credentials.txt
+
+/opt/campushield/logs:
+total 12
+drwxr-x--- 2 cs_app cs_audit 4096 Nov 19 23:07 .
+drwxr-xr-x 6 root   root     4096 Nov 19 23:07 ..
+-rw-r----- 1 cs_app cs_audit  214 Nov 19 23:07 campushield.log
+
+AFTER - authorised vs unauthorised access tests:
+
+$ runuser -u cs_registrar -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) AS students_readable FROM students;' && echo '=> cs_registrar (cs_records) ALLOWED'
+20
+=> cs_registrar (cs_records) ALLOWED
+
+$ runuser -u cs_student -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) FROM students;' || echo '=> cs_student DENIED'
+Error: unable to open database "/opt/campushield/data/campushield.db": unable to open database file
+=> cs_student DENIED
+
+$ runuser -u cs_student -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_student DENIED'
+cat: /opt/campushield/data/lab_credentials.txt: Permission denied
+=> cs_student DENIED
+
+$ runuser -u cs_registrar -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_registrar DENIED (only the service account)'
+cat: /opt/campushield/data/lab_credentials.txt: Permission denied
+=> cs_registrar DENIED (only the service account)
+
+$ runuser -u cs_admin -- tail -n 2 /opt/campushield/logs/campushield.log && echo '=> cs_admin (cs_audit) ALLOWED to read logs'
+2026-11-19T23:07:33 campushield[128]: LOGIN_SUCCESS user=s2026001 ip=10.10.50.66 role=student
+2026-11-19T23:07:33 campushield[128]: ATTENDANCE_QUERY user=s2026001 ip=10.10.50.66 course="BCS210' OR '1'='1" rows=360
+=> cs_admin (cs_audit) ALLOWED to read logs
+
+$ runuser -u cs_registrar -- tail -n 1 /opt/campushield/logs/campushield.log || echo '=> cs_registrar DENIED (separation of duties)'
+tail: cannot open '/opt/campushield/logs/campushield.log' for reading: Permission denied
+=> cs_registrar DENIED (separation of duties)
+
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' || echo '=> cs_student DENIED write to log'
+sh: 1: cannot create /opt/campushield/logs/campushield.log: Permission denied
+=> cs_student DENIED write to log

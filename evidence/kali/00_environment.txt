@@ -1,0 +1,22 @@
+
+### 0. Environment and tools
+
+$ date
+Thu Nov 19 23:07:19 UTC 2026
+
+$ uname -a
+Linux kali-lab 5.15.167.4-microsoft-standard-WSL2 #1 SMP Tue Nov 5 00:21:55 UTC 2024 x86_64 GNU/Linux
+
+$ grep PRETTY_NAME /etc/os-release
+PRETTY_NAME="Kali GNU/Linux Rolling"
+
+$ systemd-detect-virt || true
+bash: line 1: systemd-detect-virt: command not found
+
+$ nmap --version | head -1; tshark --version | head -1; sqlite3 --version; openssl version; python3 --version
+Nmap version 7.991 ( https://nmap.org )
+Running as user "root" and group "root". This could be dangerous.
+TShark (Wireshark) 4.6.9.
+3.53.4 2026-07-24 19:02:57 bf7c7f30031888f4e796e429ab3978879485813aaca6f641c7b33e4e0945alt1 (64-bit)
+OpenSSL 3.6.5 29 Sep 2026 (Library: OpenSSL 3.6.5 29 Sep 2026)
+Python 3.14.10

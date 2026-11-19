@@ -5,7 +5,7 @@
 #   sudo bash kali/run_kali_lab.sh            # full evidence run (about 5-10 min)
 #   sudo bash kali/run_kali_lab.sh cleanup    # remove lab users, groups, netns, rules
 #
-# Everything happens INSIDE this Kali VM. Two Linux network namespaces act as
+# Everything happens INSIDE this Kali machine (VM or the kali/docker container). Two Linux network namespaces act as
 # lab zones that have no route anywhere except the Kali host:
 #   cs_untrusted 10.10.50.66  <-veth->  10.10.50.1 (Kali)   unauthorised zone
 #   cs_staff     10.10.60.10  <-veth->  10.10.60.1 (Kali)   authorised campus zone
@@ -24,7 +24,7 @@ LOGF="$OPT/logs/campushield.log"
 UNTR_NS=cs_untrusted; UNTR_IP=10.10.50.66; UNTR_HOST=10.10.50.1
 STAFF_NS=cs_staff;    STAFF_IP=10.10.60.10; STAFF_HOST=10.10.60.1
 APP_PORT=5000; SHARE_PORT=8000
-NMAP_OPTS=(-Pn -sS -sV -p- -T4 --max-retries 2 --reason)
+NMAP_OPTS=(-n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason)   # -n: no DNS in the lab; --min-rate: dropped probes would otherwise slow the scan to ~100 pkt/s
 
 [ "$(id -u)" -eq 0 ] || { echo "Run with sudo: sudo bash kali/run_kali_lab.sh"; exit 1; }
 mkdir -p "$EV"
@@ -113,7 +113,7 @@ ip addr add $UNTR_HOST/24 dev cs-untr-h;  ip link set cs-untr-h up
 ip addr add $STAFF_HOST/24 dev cs-staff-h; ip link set cs-staff-h up
 in_ns $UNTR_NS ip addr add $UNTR_IP/24 dev cs-untr-n;   in_ns $UNTR_NS ip link set cs-untr-n up;   in_ns $UNTR_NS ip link set lo up
 in_ns $STAFF_NS ip addr add $STAFF_IP/24 dev cs-staff-n; in_ns $STAFF_NS ip link set cs-staff-n up; in_ns $STAFF_NS ip link set lo up
-note "Kali VM interfaces and routes (VM network settings):"
+note "Kali lab host interfaces and routes (in the VM run this is the VM; in the container run, the container):"
 run ip -br addr
 run ip route
 run ip netns list
@@ -148,7 +148,7 @@ step 03_nmap_before.txt "3. Nmap BEFORE hardening (scanner in the unauthorised z
 run ip netns exec $UNTR_NS nmap "${NMAP_OPTS[@]}" -oX "$EV/nmap_before_untrusted.xml" $UNTR_HOST
 note ""
 note "Safe NSE scripts (default/safe category, read-only HTTP requests):"
-run ip netns exec $UNTR_NS nmap -Pn -p $APP_PORT,$SHARE_PORT --script http-title,http-headers,http-methods $UNTR_HOST
+run ip netns exec $UNTR_NS nmap -n -Pn -p $APP_PORT,$SHARE_PORT --script http-title,http-headers,http-methods $UNTR_HOST
 
 # ========================================== 4. safe weakness validation (Task 2.2)
 step 04_validation.txt "4. Non-destructive validation of the weaknesses"
@@ -237,7 +237,7 @@ run ip netns exec $STAFF_NS nmap "${NMAP_OPTS[@]}" -oX "$EV/nmap_after_staff.xml
 note ""
 note "Packets matched by each firewall rule (pkts/bytes counters):"
 run iptables -L CS_LAB_IN -v -n
-sh_ "dmesg | grep CS-FW-DROP | tail -n 5"
+sh_ "dmesg 2>/dev/null | grep CS-FW-DROP | tail -n 5 || echo '(kernel log not readable here - the DROP counter above is the evidence)'"
 
 # ================================== 8. re-test of the app fix from the network (Task 4.4)
 step 08_app_retest.txt "8. Re-test SQL injection against the secure build from the authorised zone"
@@ -266,7 +266,7 @@ lab_login $STAFF_NS http://$STAFF_HOST:$APP_PORT s2026001 "Wrong-Demo-Pass1" "$J
 in_ns $STAFF_NS curl -s -o /dev/null http://$STAFF_HOST:$APP_PORT/login
 wait $TS; rm -f "$JAR"
 run tshark -r "$EV/http_login.pcap" -q -z conv,tcp
-run tshark -r "$EV/http_login.pcap" -Y http.request -T fields -E header=y -e frame.number -e ip.src -e ip.dst -e tcp.dstport -e http.request.method -e http.request.uri -e http.file_data
+run tshark -r "$EV/http_login.pcap" -Y urlencoded-form -T fields -E header=y -e frame.number -e ip.src -e ip.dst -e http.request.method -e http.request.uri -e urlencoded-form.key -e urlencoded-form.value
 note ""
 note "10b. Same login over HTTPS (self-signed lab certificate made with openssl)"
 mkdir -p "$OPT/tls"
@@ -280,8 +280,8 @@ JAR=$(mktemp)
 lab_login $STAFF_NS https://$STAFF_HOST:$APP_PORT s2026001 "Wrong-Demo-Pass1" "$JAR" >/dev/null
 wait $TS; rm -f "$JAR"
 run tshark -r "$EV/https_login.pcap" -q -z conv,tcp
-run tshark -r "$EV/https_login.pcap" -Y "tls" -T fields -E header=y -e frame.number -e ip.src -e ip.dst -e tls.record.content_type -e tls.handshake.type
-sh_ "tshark -r $EV/https_login.pcap -Y http.request | wc -l | sed 's/^/HTTP requests readable in the HTTPS capture: /'"
+run tshark -r "$EV/https_login.pcap" -d tcp.port==$APP_PORT,tls -Y "tls" -T fields -E header=y -e frame.number -e ip.src -e ip.dst -e _ws.col.Info
+sh_ "tshark -r $EV/https_login.pcap -d tcp.port==$APP_PORT,tls -Y 'urlencoded-form or http.request' | wc -l | sed 's/^/HTTP requests readable in the HTTPS capture: /'"
 start_app secure cs_app
 
 # ============================================= 11. monitoring (Task 5.3)
@@ -294,8 +294,8 @@ rm -f "$JAR"; sleep 1
 run tail -n 8 "$LOGF"
 run bash "$REPO/monitoring/detect_failed_logins.sh" "$LOGF" 5 10
 note ""
-note "Firewall drop log (kernel) - evidence of blocked probes from the untrusted zone:"
-sh_ "dmesg | grep -c CS-FW-DROP | sed 's/^/CS-FW-DROP log lines: /'"
+note "Firewall evidence of blocked probes (packets dropped by the last rule of CS_LAB_IN):"
+sh_ "iptables -L CS_LAB_IN -v -n -x | grep -E 'DROP|LOG'"
 cp "$LOGF" "$EV/campushield_kali_app.log"
 
 # ================================================== 12. summary + tidy up

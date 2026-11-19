@@ -1,0 +1,14 @@
+2026-11-19T23:07:33 campushield[128]: LOGIN_SUCCESS user=s2026001 ip=10.10.50.66 role=student
+2026-11-19T23:07:33 campushield[128]: ATTENDANCE_QUERY user=s2026001 ip=10.10.50.66 course="BCS210' OR '1'='1" rows=360
+2026-11-19T23:10:46 campushield[432]: LOGIN_SUCCESS user=s2026001 ip=10.10.60.10 role=student
+2026-11-19T23:10:46 campushield[432]: ATTENDANCE_QUERY user=s2026001 ip=10.10.60.10 course='BCS210' rows=6
+2026-11-19T23:10:46 campushield[432]: ATTENDANCE_QUERY user=s2026001 ip=10.10.60.10 course="BCS210' OR '1'='1" rows=0
+2026-11-19T23:10:54 campushield[432]: LOGIN_FAILED user=s2026001 ip=10.10.60.10 attempts=1
+2026-11-19T23:11:09 campushield[668]: LOGIN_FAILED user=s2026001 ip=10.10.60.10 attempts=2
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=1
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=2
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=3
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=4
+2026-11-19T23:11:22 campushield[733]: LOGIN_FAILED user=s2026002 ip=10.10.60.10 attempts=5
+2026-11-19T23:11:22 campushield[733]: ACCOUNT_LOCKED user=s2026002 ip=10.10.60.10 until=2026-11-19T23:26:22
+2026-11-19T23:11:22 campushield[733]: LOGIN_BLOCKED_LOCKED user=s2026002 ip=10.10.60.10 locked_until=2026-11-19T23:26:22

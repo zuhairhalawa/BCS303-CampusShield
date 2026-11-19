@@ -1,0 +1,10 @@
+
+### 8. Re-test SQL injection against the secure build from the authorised zone
+login s2026001 from 10.10.60.10 -> HTTP 302
+
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode 'course=BCS210' http://10.10.60.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+6 row(s) returned
+
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.60.1:5000/attendance | grep -oE '[0-9]+ row\(s\) returned|Course code must look like BCS303'
+Course code must look like BCS303
+0 row(s) returned

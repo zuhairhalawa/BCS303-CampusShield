@@ -1,0 +1,39 @@
+
+### 7. Nmap AFTER hardening - same command as step 3
+
+$ ip netns exec cs_untrusted nmap -n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason -oX /lab/evidence/kali/nmap_after_untrusted.xml 10.10.50.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:07 +0000
+Nmap scan report for 10.10.50.1
+Host is up, received arp-response (0.000023s latency).
+All 65535 scanned ports on 10.10.50.1 are in ignored states.
+Not shown: 65535 filtered tcp ports (no-response)
+MAC Address: 9E:50:37:6A:2E:49 (Unknown)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 87.90 seconds
+
+Same scan from the authorised staff zone:
+
+$ ip netns exec cs_staff nmap -n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason -oX /lab/evidence/kali/nmap_after_staff.xml 10.10.60.1
+Starting Nmap 7.991 ( https://nmap.org ) at 2026-11-19 23:09 +0000
+Nmap scan report for 10.10.60.1
+Host is up, received arp-response (0.000037s latency).
+Not shown: 65534 filtered tcp ports (no-response)
+PORT     STATE SERVICE REASON         VERSION
+5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+MAC Address: 3E:83:48:08:BC:07 (Unknown)
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 88.26 seconds
+
+Packets matched by each firewall rule (pkts/bytes counters):
+
+$ iptables -L CS_LAB_IN -v -n
+Chain CS_LAB_IN (2 references)
+ pkts bytes target     prot opt in     out     source               destination         
+  113  6463 ACCEPT     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ctstate RELATED,ESTABLISHED
+   69  3196 ACCEPT     tcp  --  *      *       10.10.60.0/24        0.0.0.0/0            tcp dpt:5000 ctstate NEW
+   65  2972 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            limit: avg 20/min burst 5 LOG flags 0 level 4 prefix "CS-FW-DROP "
+ 262K   12M DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+
+$ dmesg 2>/dev/null | grep CS-FW-DROP | tail -n 5 || echo '(kernel log not readable here - the DROP counter above is the evidence)'

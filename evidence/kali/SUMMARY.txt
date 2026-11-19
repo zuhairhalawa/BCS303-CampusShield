@@ -1,0 +1,54 @@
+
+### SUMMARY (key lines pulled from the step files)
+
+$ grep -E '^[0-9]+/tcp' /lab/evidence/kali/03_nmap_before.txt | sed 's/^/BEFORE untrusted: /'
+BEFORE untrusted: 5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+BEFORE untrusted: 8000/tcp open  http    syn-ack ttl 64 SimpleHTTPServer 0.6 (Python 3.14.10)
+BEFORE untrusted: 5000/tcp open  upnp
+BEFORE untrusted: 8000/tcp open  http-alt
+
+$ grep -E '^[0-9]+/tcp|ignored states|filtered' /lab/evidence/kali/07_nmap_after.txt | sed 's/^/AFTER: /'
+AFTER: All 65535 scanned ports on 10.10.50.1 are in ignored states.
+AFTER: Not shown: 65535 filtered tcp ports (no-response)
+AFTER: Not shown: 65534 filtered tcp ports (no-response)
+AFTER: 5000/tcp open  http    syn-ack ttl 64 Werkzeug httpd 3.1.9 (Python 3.14.10)
+
+$ grep -hE 'row\(s\) returned|Course code must' /lab/evidence/kali/04_validation.txt /lab/evidence/kali/08_app_retest.txt
+$ ip netns exec cs_untrusted curl -s -b /tmp/tmp.L57NCa613p -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.50.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+360 row(s) returned
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode 'course=BCS210' http://10.10.60.1:5000/attendance | grep -o '[0-9]* row(s) returned'
+6 row(s) returned
+$ ip netns exec cs_staff curl -s -b /tmp/tmp.JgwozrEEkg -G --data-urlencode "course=BCS210' OR '1'='1" http://10.10.60.1:5000/attendance | grep -oE '[0-9]+ row\(s\) returned|Course code must look like BCS303'
+Course code must look like BCS303
+0 row(s) returned
+
+$ grep -hE '=>' /lab/evidence/kali/05_linux_permissions.txt /lab/evidence/kali/06_firewall.txt /lab/evidence/kali/09_firewall_removed.txt
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' && echo '=> cs_student could WRITE to the application log'
+$ runuser -u cs_registrar -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) AS students_readable FROM students;' && echo '=> cs_registrar (cs_records) ALLOWED'
+=> cs_registrar (cs_records) ALLOWED
+$ runuser -u cs_student -- sqlite3 -readonly /opt/campushield/data/campushield.db 'SELECT COUNT(*) FROM students;' || echo '=> cs_student DENIED'
+=> cs_student DENIED
+$ runuser -u cs_student -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_student DENIED'
+=> cs_student DENIED
+$ runuser -u cs_registrar -- cat /opt/campushield/data/lab_credentials.txt || echo '=> cs_registrar DENIED (only the service account)'
+=> cs_registrar DENIED (only the service account)
+$ runuser -u cs_admin -- tail -n 2 /opt/campushield/logs/campushield.log && echo '=> cs_admin (cs_audit) ALLOWED to read logs'
+=> cs_admin (cs_audit) ALLOWED to read logs
+$ runuser -u cs_registrar -- tail -n 1 /opt/campushield/logs/campushield.log || echo '=> cs_registrar DENIED (separation of duties)'
+=> cs_registrar DENIED (separation of duties)
+$ runuser -u cs_student -- sh -c 'echo tampered >> /opt/campushield/logs/campushield.log' || echo '=> cs_student DENIED write to log'
+=> cs_student DENIED write to log
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w 'untrusted    -> :5000  HTTP %{http_code}\n' http://10.10.50.1:5000/login || echo '=> untrusted zone BLOCKED (timeout)'
+=> untrusted zone BLOCKED (timeout)
+$ ip netns exec cs_staff nc -zv -w 3 10.10.60.1 8000 || echo '=> :8000 closed/blocked'
+=> :8000 closed/blocked
+$ ip netns exec cs_staff nc -zv -w 3 10.10.60.1 22 || echo '=> other ports from staff zone blocked'
+=> other ports from staff zone blocked
+
+$ grep -h 'HTTP' /lab/evidence/kali/06_firewall.txt | grep zone
+$ ip netns exec cs_staff curl -s -m 5 -o /dev/null -w 'staff zone   -> :5000  HTTP %{http_code}\n' http://10.10.60.1:5000/login
+staff zone   -> :5000  HTTP 200
+$ ip netns exec cs_untrusted curl -s -m 5 -o /dev/null -w 'untrusted    -> :5000  HTTP %{http_code}\n' http://10.10.50.1:5000/login || echo '=> untrusted zone BLOCKED (timeout)'
+
+$ grep -h 'ALERT' /lab/evidence/kali/11_monitoring.txt
+ALERT BRUTE_FORCE ip=10.10.60.10 failures=8 between 2026-11-19T23:10:54 and 2026-11-19T23:11:22 users=s2026001 s2026002
