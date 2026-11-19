@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Audit log - CampusShield{% endblock %}
+{% block content %}
+<h1>Audit log (latest 50)</h1>
+<table>
+  <tr><th>Time</th><th>User</th><th>Event</th><th>Detail</th><th>IP</th></tr>
+  {% for r in rows %}<tr><td>{{ r.ts }}</td><td>{{ r.username }}</td><td>{{ r.event }}</td><td>{{ r.detail }}</td><td>{{ r.ip }}</td></tr>{% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CampusShield{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if mode == 'vulnerable' %}
+  <div class="lab-banner">LAB MODE - INTENTIONALLY VULNERABLE BUILD - isolated demo only</div>
+{% endif %}
+<header>
+  <span class="brand">CampusShield</span>
+  {% if user %}
+  <nav>
+    {% if user.role == 'student' %}<a href="{{ url_for('attendance') }}">My attendance</a>{% endif %}
+    {% if user.role == 'registrar' %}
+      <a href="{{ url_for('students') }}">Students</a>
+      <a href="{{ url_for('search') }}">Search</a>
+      <a href="{{ url_for('mark_attendance') }}">Mark attendance</a>
+    {% endif %}
+    {% if user.role == 'admin' %}
+      <a href="{{ url_for('admin_users') }}">Accounts</a>
+      <a href="{{ url_for('admin_audit') }}">Audit log</a>
+    {% endif %}
+    <span class="who">{{ user.username }} ({{ user.role }})</span>
+    <a href="{{ url_for('logout') }}">Log out</a>
+  </nav>
+  {% endif %}
+</header>
+<main>
+  {% with msgs = get_flashed_messages() %}{% for m in msgs %}<p class="flash">{{ m }}</p>{% endfor %}{% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer>BCS303 CampusShield lab - synthetic data only - mode: {{ mode }}</footer>
+</body>
+</html>

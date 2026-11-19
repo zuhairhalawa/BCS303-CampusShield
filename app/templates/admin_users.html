@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Accounts - CampusShield{% endblock %}
+{% block content %}
+<h1>User accounts</h1>
+<table>
+  <tr><th>Username</th><th>Role</th><th>Student ID</th><th>Failed attempts</th><th>Locked until</th><th></th></tr>
+  {% for u in users %}
+  <tr><td>{{ u.username }}</td><td>{{ u.role }}</td><td>{{ u.student_id or '-' }}</td><td>{{ u.failed_attempts }}</td>
+      <td>{{ u.locked_until or '-' }}</td>
+      <td>{% if u.locked_until %}<form method="post" action="{{ url_for('admin_unlock', username=u.username) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button>Unlock</button></form>{% endif %}</td></tr>
+  {% endfor %}
+</table>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <h2>Create account</h2>
+  <label>Username <input name="username" required></label>
+  <label>Password <input name="password" type="password" required></label>
+  <label>Role <select name="role"><option>student</option><option>registrar</option><option>admin</option></select></label>
+  <button type="submit">Create</button>
+  <p class="hint">Policy: 12+ characters, upper and lower case, digit, symbol, not a common password, must not contain the username.</p>
+</form>
+{% endblock %}

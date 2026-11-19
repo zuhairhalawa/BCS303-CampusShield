@@ -1,0 +1,19 @@
+# runtime state
+data/*.db
+data/*.db-journal
+data/lab_credentials.txt
+logs/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# never commit keys or decrypted copies
+*.key
+*.pem
+secrets/
+demonstrations/cryptography/output/*.key
+demonstrations/cryptography/output/*_decrypted.csv
+
+# office lock files
+~$*

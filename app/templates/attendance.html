@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}My attendance - CampusShield{% endblock %}
+{% block content %}
+<h1>My attendance</h1>
+<p>Student ID: <strong>{{ user.student_id }}</strong>. Registered courses:
+  {% for c in courses %}<code>{{ c.code }}</code> {{ c.title }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+<form method="get" class="card inline">
+  <label>Course code <input name="course" value="{{ course }}" placeholder="BCS303"></label>
+  <button type="submit">Show</button>
+</form>
+{% if sql_shown %}<p class="sql">SQL sent to SQLite: <code>{{ sql_shown }}</code></p>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% if course %}
+<p class="count">{{ rows|length }} row(s) returned</p>
+<table>
+  <tr><th>Student ID</th><th>Name</th><th>Course</th><th>Date</th><th>Status</th></tr>
+  {% for r in rows %}
+  <tr><td>{{ r[0] }}</td><td>{{ r[1] }}</td><td>{{ r[2] }}</td><td>{{ r[3] }}</td><td>{{ r[4] }}</td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}

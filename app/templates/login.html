@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Sign in - CampusShield{% endblock %}
+{% block content %}
+<h1>Sign in</h1>
+<form method="post" class="card narrow">
+  <label>Username <input name="username" autocomplete="username" required></label>
+  <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+  <button type="submit">Sign in</button>
+  <p class="hint">Accounts lock for 15 minutes after 5 wrong passwords.</p>
+</form>
+{% endblock %}
