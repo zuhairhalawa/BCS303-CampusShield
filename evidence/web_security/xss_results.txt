@@ -1,0 +1,28 @@
+CampusShield reflected XSS test - 2026-11-20 02:18:43
+Target: /search?q=<payload> as registrar1 (registrar-only page)
+Payload: <script>document.body.insertAdjacentHTML('afterbegin','<h2 id="xss-proof" style="color:#a4161a">XSS DEMO: script from the link ran. document.cookie = ['+document.cookie+']</h2>')</script>
+
+Step 1 - raw HTTP response
+  [VULNERABLE] HTTP 200 | raw <script> reflected: True | HTML-encoded copy: True
+               Content-Security-Policy: (missing)
+               X-Frame-Options: (missing)
+               X-Content-Type-Options: (missing)
+               Referrer-Policy: (missing)
+  [SECURE    ] HTTP 200 | raw <script> reflected: False | HTML-encoded copy: True
+               Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri
+               X-Frame-Options: DENY
+               X-Content-Type-Options: nosniff
+               Referrer-Policy: no-referrer
+
+  [VULNERABLE] session cookie flags set at login: ['HttpOnly', 'Path=/', 'SameSite=Lax']
+  [SECURE    ] session cookie flags set at login: ['HttpOnly', 'Path=/', 'SameSite=Lax']
+
+Step 2 - real browser (Edge via Playwright)
+  [VULNERABLE] script executed in browser: True
+               injected text: XSS DEMO: script from the link ran. document.cookie = []
+  [SECURE    ] script executed in browser: False
+               page shows the input as text: <script>document.body.insertAdjacentHTML('afterbegin','<h2 id="xss-pro...
+
+Step 3 - normal search still works on the secure build
+  search 'O'Neill' -> 1 result(s), page HTTP 200
+  search 'Haddad'  -> 1 result(s)

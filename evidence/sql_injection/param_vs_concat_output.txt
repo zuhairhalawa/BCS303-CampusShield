@@ -1,0 +1,18 @@
+Part A - same input, two query styles (student S2026001, course BCS210)
+  input: BCS210
+    concatenated  -> 6 rows, 1 distinct student/user values
+    parameterised -> 6 rows (input treated as a literal course code)
+  input: BCS210' OR '1'='1
+    concatenated  -> 360 rows, 20 distinct student/user values
+    parameterised -> 0 rows (input treated as a literal course code)
+  input: x' UNION SELECT username, role, password_hash FROM users --
+    concatenated  -> 5 rows, 5 distinct student/user values
+    parameterised -> 0 rows (input treated as a literal course code)
+
+Part B - validation is not a substitute
+  legitimate search term: O'Neill
+    quote-blocking filter accepts it? False  (a real student would be blocked)
+    concatenated query -> error: near "Neill": syntax error  (the apostrophe breaks the SQL)
+    parameterised query -> [('S2026020', "Aisha O'Neill")]
+  -> the filter blocks a real student, and every query would need its own perfect filter;
+     the parameterised query keeps code and data separate, so no filter is needed for safety.

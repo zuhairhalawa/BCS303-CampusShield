@@ -1,0 +1,43 @@
+CampusShield SQL injection test - 2026-11-20 02:18:00
+Target: /attendance?course=<input> as student s2026001 (should only see S2026001 rows)
+Vulnerable build: http://127.0.0.1:5001   Secure build: http://127.0.0.1:5000
+
+==============================================================================
+T1 normal query
+  input: BCS210
+  [VULNERABLE] HTTP 200 | rows returned:   6 | distinct values in col 1: 1
+               sample row: ['S2026001', 'Omar Haddad', 'BCS210']
+               sample row: ['S2026001', 'Omar Haddad', 'BCS210']
+               sample row: ['S2026001', 'Omar Haddad', 'BCS210']
+  [SECURE    ] HTTP 200 | rows returned:   6 | distinct values in col 1: 1
+               sample row: ['S2026001', 'Omar Haddad', 'BCS210']
+               sample row: ['S2026001', 'Omar Haddad', 'BCS210']
+               sample row: ['S2026001', 'Omar Haddad', 'BCS210']
+==============================================================================
+T2 tautology
+  input: BCS210' OR '1'='1
+  [VULNERABLE] HTTP 200 | rows returned: 360 | distinct values in col 1: 20
+               sample row: ['S2026001', 'Omar Haddad', 'BCS240']
+               sample row: ['S2026001', 'Omar Haddad', 'BCS303']
+               sample row: ['S2026001', 'Omar Haddad', 'BCS210']
+  [SECURE    ] HTTP 200 | rows returned:   0 | distinct values in col 1: 0
+               message: Course code must look like BCS303.
+==============================================================================
+T3 UNION - read users table
+  input: x' UNION SELECT username, role, password_hash, 'leak', 'leak' FROM users --
+  [VULNERABLE] HTTP 200 | rows returned:   5 | distinct values in col 1: 5
+               sample row: ['admin1', 'admin', 'pbkdf2_sha256$600000$tcQ5sUSJrKwvHjkj...']
+               sample row: ['registrar1', 'registrar', 'pbkdf2_sha256$600000$HvRRmC7gZDoqFWJC...']
+               sample row: ['s2026001', 'student', 'pbkdf2_sha256$600000$Ak4zfqhnbUv+qHFj...']
+  [SECURE    ] HTTP 200 | rows returned:   0 | distinct values in col 1: 0
+               message: Course code must look like BCS303.
+==============================================================================
+T4 lone quote (error probe)
+  input: '
+  [VULNERABLE] HTTP 200 | rows returned:   0 | distinct values in col 1: 0
+               message: Database error: unrecognized token: "''' ORDER BY a.student_id, a.session_date"
+  [SECURE    ] HTTP 200 | rows returned:   0 | distinct values in col 1: 0
+               message: Course code must look like BCS303.
+==============================================================================
+Expected: vulnerable build leaks other students' rows (T2) and the users table (T3);
+secure build rejects the same inputs and still answers the normal query (T1).
