@@ -66,7 +66,7 @@ def main():
         "Demo_and_Speaker_Script.md      who presents what + live demo steps\n"
         "CampusShield_Source.zip         source code, scripts, synthetic data and evidence\n"
         f"                                (git archive of commit {head})\n"
-        "screenshots/, diagrams/         figures used in the report\n\n"
+        "img/                            screenshots and diagrams used in the report\n\n"
         "Run: pip install -r requirements.txt ; python scripts/init_db.py ; python scripts/run_app.py\n"
         "Kali lab: sudo bash kali/run_kali_lab.sh   (see kali/README.md)\n", encoding="utf-8")
     print("  + submission/README.txt\nDone.")
