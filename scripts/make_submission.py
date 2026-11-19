@@ -57,7 +57,7 @@ def main():
         if media.suffix in (".png", ".gif") and not media.name.startswith("slide-"):
             copy(media, SUB / "img" / media.name)
     zip_path = SUB / "CampusShield_Source.zip"
-    subprocess.run(["git", "archive", "--format=zip", "--prefix=BCS303-CampusShield/", "-o", str(zip_path), "HEAD"],
+    subprocess.run(["git", "archive", "--format=zip", "--prefix=BCS303-CampusShield/", "-o", str(zip_path), "HEAD", "--", ".", ":(exclude)submission"],
                    cwd=ROOT, check=True)
     head = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()
     print("  +", zip_path.relative_to(ROOT), f"(git archive of commit {head})")
