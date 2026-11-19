@@ -215,6 +215,37 @@ def pick(rel, regex=None, limit=40):
     return lines[:limit]
 
 
+def short(lines, n=104):
+    return [l if len(l) <= n else l[:n - 1] + "…" for l in lines]
+
+
+def slide_media(page, k):
+    """Bigger-font, fewer-line renders of the same real output files, for the slides."""
+    global TERM_HTML
+    normal = TERM_HTML
+    TERM_HTML = TERM_HTML.replace("font:14px/1.45", "font:19px/1.4")
+    try:
+        render_terminal(page, k + "03_nmap_before.txt + 04_validation.txt", short(
+            pick(k + "03_nmap_before.txt", r"^(Not shown|PORT|[0-9]+/tcp open +http +syn)", 4)
+            + pick(k + "03_nmap_before.txt", r"^\|_http-title", 1)
+            + pick(k + "04_validation.txt", r"^(href=|HTTP/1.0|Content-Length|[0-9]+ row)", 5)), "slide-nmap-before.png", 1000)
+        render_terminal(page, k + "07_nmap_after.txt + 08_app_retest.txt", short(
+            pick(k + "07_nmap_after.txt", r"^(\$ ip netns exec cs_\w+ nmap|All 65535|Not shown|[0-9]+/tcp open)", 7)
+            + pick(k + "08_app_retest.txt", r"^([0-9]+ row|Course code)", 3)), "slide-nmap-after.png", 1000)
+        render_terminal(page, k + "05_linux_permissions.txt", short(
+            pick(k + "05_linux_permissions.txt", r"^(-rw-rw-rw-|-rw-r-----|-rw-------)", 4)
+            + pick(k + "05_linux_permissions.txt", r"^=>", 7)), "slide-permissions.png", 1000)
+        render_terminal(page, k + "06_firewall.txt + 09_firewall_removed.txt", short(
+            pick(k + "06_firewall.txt", r"^(-A CS_LAB_IN|staff zone|untrusted|=>)", 9)
+            + pick(k + "09_firewall_removed.txt", r"^untrusted", 2)), "slide-firewall.png", 1000)
+        render_terminal(page, k + "11_monitoring.txt", short(
+            pick(k + "11_monitoring.txt", r"^(attempt 6|.*ACCOUNT_LOCKED user|failed logins found|ALERT)", 5)), "slide-monitoring.png", 1000)
+        render_terminal(page, k + "10c_capture_decode.txt", short(
+            pick(k + "10c_capture_decode.txt", r"^(frame\.number|4\s+10\.10\.60\.10\s+10\.10\.60\.1\s+POST|[0-9]+\s+10\..*(Hello|Application Data$)|\(0x|HTTP requests)", 9)), "slide-capture.png", 1000)
+    finally:
+        TERM_HTML = normal
+
+
 def evidence_media():
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
@@ -224,7 +255,7 @@ def evidence_media():
         if (ROOT / k / "SUMMARY.txt").exists():
             render_terminal(page, k + "03_nmap_before.txt",
                             pick(k + "03_nmap_before.txt", r"^(\$ ip netns exec cs_untrusted nmap -n -Pn -sS|PORT|[0-9]+/tcp|Nmap done|Not shown)", 5)
-                            + ["", "# read-only NSE scripts on the two web ports:"]
+                            + [""] + pick(k + "03_nmap_before.txt", r"^\$ ip netns exec cs_untrusted nmap -n -Pn -p 5000", 1)
                             + pick(k + "03_nmap_before.txt", r"^\|", 12),
                             "nmap-before.png")
             render_terminal(page, k + "07_nmap_after.txt",
@@ -242,6 +273,8 @@ def evidence_media():
             render_terminal(page, k + "11_monitoring.txt",
                             pick(k + "11_monitoring.txt", r"^attempt|LOGIN_FAILED|ACCOUNT_LOCKED|^\$ bash|ALERT|failed logins found", 24),
                             "kali-monitoring-alert.png")
+        if (ROOT / k / "SUMMARY.txt").exists():
+            slide_media(page, k)
         render_terminal(page, "evidence/monitoring/detect_app_log_output.txt",
                         [l for l in pick("evidence/monitoring/detect_app_log_output.txt", None, 19)
                          if not l.startswith("run at")], "monitoring-alerts.png")   # hostname line left out

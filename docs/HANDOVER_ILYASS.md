@@ -10,22 +10,14 @@ Ilyass then clones it with his own login.
 
 ## 2. Your hands-on part (about 45-60 minutes)
 
-### A. Kali lab run - network, firewall, permissions, traffic capture
-If you have a Kali VM (or use Zuhair's), follow `kali/README.md`:
-
-```bash
-sudo bash kali/run_kali_lab.sh
-```
-
-- Take the terminal screenshots listed in `kali/README.md` and save them in `evidence/kali/`.
-- Open `evidence/kali/http_login.pcap` in Wireshark, find the `POST /login` and screenshot it
-  (`evidence/kali/wireshark_http_post.png`). Then open `https_login.pcap` and confirm you only
-  see TLS records.
-- Read `03_nmap_before.txt` and `07_nmap_after.txt` and check that the attack-surface table
-  in the report (Section 4.2, Table 8) matches what your scan really found. If another port
-  was open in the VM, add a row for it.
-- Commit with your own account:
-  `git add evidence/kali && git commit -m "Add Kali lab evidence (nmap, firewall, permissions, capture)" && git push`
+### A. Kali lab evidence - review it, and optionally re-run it yourself
+The lab has been run and the real output is in `evidence/kali/` (see `kali/README.md` for how).
+- Read `03_nmap_before.txt`, `04_validation.txt`, `07_nmap_after.txt`, `06_firewall.txt` and
+  `10_traffic_capture.txt` until you can explain every line (you present slides 5, 10 and 11).
+- Optional, real contribution with your own account: run the same script in a Kali VM
+  (`sudo bash kali/run_kali_lab.sh`), take terminal screenshots of the Nmap before/after output,
+  open `http_login.pcap` in Wireshark and screenshot the `POST /login`. Save them under
+  `evidence/kali/vm_run/` and commit them yourself.
 
 ### B. Privacy evaluation review
 - Run `python privacy/make_privacy_dataset.py` and `python privacy/anonymise.py`.
@@ -44,7 +36,7 @@ with the speaker notes in the PPTX, and edit the wording so it sounds like you.
 3. `app/security.py`: `hash_password`, `verify_password`, `check_password_policy`.
 4. `presentation/speaker_script.md` - the "Likely questions" section.
 
-## 4. After the Kali evidence is in the repo
+## 4. If you add evidence
 
 Rebuild the report and deck on a Windows machine with Word and PowerPoint:
 

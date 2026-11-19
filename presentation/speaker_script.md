@@ -55,12 +55,14 @@ Have two browser tabs ready: 127.0.0.1:5001 and 127.0.0.1:5000.
 - Log in as `admin1` > Accounts: s2026002 shows 5 failures and a lock time; click Unlock.
 - As a student, open `http://127.0.0.1:5000/students`: 403.
 
-## Kali demo (slide 5 and 10, Ilyass)
+## Kali demo (slides 5, 10 and 11, Ilyass)
 
-Either run `sudo bash kali/run_kali_lab.sh` live (about 5-10 minutes - start it before the
-presentation) or open the saved files in `evidence/kali/`:
+The real Kali run is saved in `evidence/kali/` (Kali Linux kali-rolling, Nmap 7.99, TShark 4.6,
+in a container on an internal-only Docker network). For the demo, open:
 `03_nmap_before.txt` vs `07_nmap_after.txt`, `06_firewall.txt` (allowed vs blocked),
-`05_linux_permissions.txt`, `10_traffic_capture.txt` and the `.pcap` files in Wireshark.
+`05_linux_permissions.txt`, and `10_traffic_capture.txt` (HTTP form fields readable vs TLS only).
+To re-run it live (about 10 minutes, start it before the talk): `bash kali/docker/run_lab_container.sh`
+on the laptop with Docker Desktop running.
 
 ## Likely questions and short answers
 

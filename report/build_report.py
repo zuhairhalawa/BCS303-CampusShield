@@ -260,7 +260,10 @@ def build():
 
     def flush():
         if para:
-            p = doc.add_paragraph(); add_runs(p, " ".join(para)); para.clear()
+            text = " ".join(para)
+            p = doc.add_paragraph(); add_runs(p, text); para.clear()
+            if text.startswith("**") and text.endswith(":**"):     # label line: keep it with what follows
+                p.paragraph_format.keep_with_next = True
 
     while i < len(lines):
         ln = lines[i]

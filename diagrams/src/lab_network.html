@@ -15,7 +15,7 @@
 
 <!-- VM boundary -->
 <rect x="20" y="62" width="1360" height="668" rx="12" fill="none" stroke="#455a64" stroke-width="2" stroke-dasharray="10 6"/>
-<text x="40" y="90" class="h" style="fill:#455a64">Kali Linux VM (VMware) — isolated lab; every test packet stays inside this VM</text>
+<text x="40" y="90" class="h" style="fill:#455a64">Kali Linux lab (kali-rolling container, internal-only network) — every test packet stays inside it</text>
 
 <!-- untrusted namespace -->
 <rect x="50" y="160" width="290" height="230" rx="10" fill="#fdecea" stroke="#c62828" stroke-width="2"/>
@@ -65,10 +65,10 @@
 <text x="596" y="484">+ LOG all other inbound traffic</text>
 <text x="596" y="504">arriving on cs-untr-h / cs-staff-h</text>
 <text x="520" y="536">rules match only the lab veth interfaces,</text>
-<text x="520" y="556">so the VM's own network card is untouched;</text>
+<text x="520" y="556">so the lab host's own interface is untouched;</text>
 <text x="520" y="576">rules are applied, re-tested, then removed</text>
 
-<text x="490" y="630" class="b" style="fill:#37474f">Scope: no traffic leaves the VM; no Internet scanning.</text>
+<text x="490" y="630" class="b" style="fill:#37474f">Scope: no traffic leaves the lab; no Internet scanning.</text>
 <text x="490" y="652">Zones are Linux network namespaces joined by veth pairs.</text>
 <text x="490" y="674">Evidence from each step is saved under evidence/.</text>
 

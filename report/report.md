@@ -16,17 +16,17 @@ For every major test we followed the same loop: record the baseline, safely vali
 
 ## 2.1 Lab environment
 
-We used two environments. The application, the database and all cryptography, password, web, privacy and monitoring exercises were developed and executed on a Windows 11 development laptop. The network, operating-system and firewall exercises are scripted for the Kali Linux virtual machine, because they need root access and Linux networking tools.
+We used two environments. The application, the database and all cryptography, password, web, privacy and monitoring exercises were developed and executed on a Windows 11 development laptop. The network, operating-system and firewall exercises need root access and Linux networking tools, so they run as one script (`kali/run_kali_lab.sh`) on Kali Linux. We first tried our Kali VMware VM: it starts, but running commands inside it from the host with `vmrun` needs the guest login, which our automated run could not use. We therefore ran the same script on the official Kali Linux image (`kali-rolling`) in a disposable Docker container that is attached only to an internal Docker network with no published ports. The script itself is unchanged and also runs inside the VM.
 
 Table: Tools and versions used in the lab
 | Component | Where | Version / details |
 |---|---|---|
-| CampusShield portal | Windows laptop and Kali VM | Python 3.12.0, Flask 3.1.0, our own code in `app/` |
+| CampusShield portal | Windows laptop and Kali lab | Python 3.12.0, Flask 3.1.0, our own code in `app/` |
 | Database | both | SQLite 3.42.0 through Python `sqlite3`; `sqlite3` CLI on Kali |
 | Cryptography | Windows laptop | `cryptography` 36.0.2 (AES-GCM), `hashlib` (SHA-256, PBKDF2), OpenSSL 3.5.6 |
 | Steganography | Windows laptop | Pillow 11.2.1, our own LSB script |
 | Browser tests and screenshots | Windows laptop | Microsoft Edge driven by Playwright 1.51.0 |
-| Network and OS lab | Kali Linux 2026.2 VM (VMware Workstation) | nmap, tshark, iptables, iproute2 network namespaces, curl, openssl |
+| Network and OS lab | Kali Linux (kali-rolling) container on Docker Desktop, internal-only network | Nmap 7.99, TShark 4.6.9, iptables, iproute2 network namespaces, curl, openssl, sqlite3 |
 | Monitoring | both | Bash + gawk script `monitoring/detect_failed_logins.sh` |
 
 ## 2.2 Attack, defend, verify
@@ -39,13 +39,13 @@ For each weakness we kept two versions of the same thing, so that the before and
 
 - Only synthetic data. Student names, IDs and e-mail addresses are invented, and e-mail addresses use the reserved `.test` domain.
 - Lab passwords for the dummy accounts are generated randomly on each installation and stored in a git-ignored file. They are not printed in this report.
-- Testing targets were limited to 127.0.0.1 on the laptop and to two isolated network namespaces inside the Kali VM. No Internet host, real website or third-party system was scanned or attacked.
+- Testing targets were limited to 127.0.0.1 on the laptop and to two isolated network namespaces inside the Kali lab container. No Internet host, real website or third-party system was scanned or attacked.
 - The phishing e-mail is an offline `.eml` file. It was never sent and contains no credential form.
 - The vulnerable build refuses to listen on anything except the loopback address unless an explicit lab flag is given, which only the Kali lab script uses.
 
 ## 2.4 How the evidence is presented
 
-Every output box in this report marked "Real output" is copied automatically from a file in the `evidence/` folder of our repository, which was written by the script while it ran. Screenshots in Section 4 were taken by Playwright from the running application. Diagrams were drawn by us and are labelled as design diagrams. Results that come from the Kali VM are marked "Real Kali output"; where that run had not been done when this version of the report was generated, a yellow PENDING box shows exactly which file will fill it.
+Every output box in this report marked "Real output" is copied automatically from a file in the `evidence/` folder of our repository, which was written by the script while it ran. Screenshots in Section 4 were taken by Playwright from the running application. Diagrams were drawn by us and are labelled as design diagrams. Results from the Kali lab are marked "Real Kali output" and come from `evidence/kali/`. The terminal pictures in Section 4 are renderings of those saved output files (each one names its source file); they are not screen captures of a live terminal.
 
 <!-- PAGEBREAK -->
 
@@ -106,13 +106,13 @@ Table: Threat register (baseline system, before controls)
 
 ### Security model and mechanisms
 
-The main model we used is **role-based access control (RBAC)** [2]. Permissions are attached to roles and users get roles, so the access rules can be read in one place: the `require_roles()` decorator in `app/web.py`. We chose RBAC because a university already thinks in roles, and it makes the policy easy to check: the access matrix in Table 9 was produced by testing every role against every page.
+The main model we used is **role-based access control (RBAC)** [2]. Permissions are attached to roles and users get roles, so the access rules can be read in one place: the `require_roles()` decorator in `app/web.py`. We chose RBAC because a university already thinks in roles, and it makes the policy easy to check: the access matrix in Table 10 was produced by testing every role against every page.
 
 RBAC is supported by three other principles. **Least privilege** appears in the application (a student's ID comes from the session, so a student cannot ask for someone else's data) and in the operating system (the database is only readable by the service account and the records group). **Separation of duties** is visible in Table 2: the person who creates accounts is not the person who edits records. **Defence in depth** means that each attack in this project meets more than one layer: an outsider is blocked by the firewall first, then needs a valid account, then a role, and even an injected query is neutralised by parameterised SQL.
 
 ### Lab isolation
 
-The Kali lab script creates two Linux network namespaces inside the VM. `cs_untrusted` (10.10.50.66) represents an unauthorised network zone and is where the scanner runs; `cs_staff` (10.10.60.10) represents the authorised campus zone. Each namespace is connected to the Kali host by a virtual Ethernet (veth) pair and has no default route, so it can reach only the Kali host on its own /24 network. The evidence for this (routes, namespaces and "no route" checks) is in Section 4.1.
+The Kali lab script creates two Linux network namespaces inside the Kali machine. `cs_untrusted` (10.10.50.66) represents an unauthorised network zone and is where the scanner runs; `cs_staff` (10.10.60.10) represents the authorised campus zone. Each namespace is connected to the Kali host by a virtual Ethernet (veth) pair and has no default route, so it can reach only the Kali host on its own /24 network. Around this, the Kali container was attached only to an internal Docker network (`internal=true`: Docker gives it no outbound route), and no container ports were published to the laptop. So the deliberately weak services (the vulnerable build on 0.0.0.0:5000 and the backup share on :8000) could only be reached from inside the lab. The evidence for this (Docker network settings, routes, namespaces and "no route" checks) is in Section 4.1.
 
 ## 3.2 Task 2 - Network discovery and attack surface (CLO-2)
 
@@ -123,15 +123,15 @@ The Kali lab script creates two Linux network namespaces inside the VM. `cs_untr
 **Scan.** From the untrusted zone we run a full TCP scan of the Kali host address on that segment, with service and version detection:
 
 ```
-sudo ip netns exec cs_untrusted nmap -Pn -sS -sV -p- -T4 --max-retries 2 --reason 10.10.50.1
-sudo ip netns exec cs_untrusted nmap -Pn -p 5000,8000 --script http-title,http-headers,http-methods 10.10.50.1
+sudo ip netns exec cs_untrusted nmap -n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason 10.10.50.1
+sudo ip netns exec cs_untrusted nmap -n -Pn -p 5000,8000 --script http-title,http-headers,http-methods 10.10.50.1
 ```
 
-The scan is scoped to one lab address inside the VM; it does not leave the VM. `-p-` covers all 65,535 TCP ports, `-sV` asks each open port which service and version it runs, and the second command uses only read-only NSE scripts.
+The scan is scoped to one lab address inside the Kali machine; it does not leave the lab. `-p-` covers all 65,535 TCP ports, `-sV` asks each open port which service and version it runs, `-n` turns off DNS lookups (the lab zones have no DNS server, and our first attempt without `-n` stalled on reverse-DNS), `--min-rate 1500` keeps the scan quick once the firewall silently drops probes (without it Nmap slowed to about 100 packets per second), and the second command uses only read-only NSE scripts.
 
 **Required or unnecessary.** Port 5000 (the portal) is required, but only for the authorised zone. Port 8000 (the backup share) is not needed by the portal at all; it exists only because someone copied files with a quick web server. Any other open port found by the scan is listed in Table 8 with a decision.
 
-**Safe validation.** We did not try to break anything. For the backup share we checked whether directory listing is enabled and sent a `HEAD` request for the database file, which returns only headers (status 200 and the file size) without downloading the data. If Metasploit is installed in the VM, the script also runs the read-only auxiliary scanners `auxiliary/scanner/http/dir_listing` and `auxiliary/scanner/http/http_version`. For the portal, we logged in as a student from the untrusted zone and sent the same SQL injection test string used in Task 4, recording only the number of rows returned.
+**Safe validation.** We did not try to break anything. For the backup share we checked whether directory listing is enabled and sent a `HEAD` request for the database file, which returns only headers (status 200 and the file size) without downloading the data. The script can also run the read-only Metasploit scanners `auxiliary/scanner/http/dir_listing` and `auxiliary/scanner/http/http_version` when Metasploit is installed; our container image did not include Metasploit, so the validation used curl and Nmap, which the brief allows. For the portal, we logged in as a student from the untrusted zone and sent the same SQL injection test string used in Task 4, recording only the number of rows returned.
 
 **Exposure control.** We applied three changes and then ran exactly the same Nmap command again:
 
@@ -149,7 +149,7 @@ iptables -I INPUT 1 -i cs-untr-h  -j CS_LAB_IN
 iptables -I INPUT 1 -i cs-staff-h -j CS_LAB_IN
 ```
 
-The rules only match the two lab veth interfaces, so the VM's own network connection is not affected.
+The rules only match the two lab veth interfaces, so the lab machine's own network connection is not affected.
 
 ## 3.3 Task 3 - Authentication and cryptography (CLO-3)
 
@@ -337,17 +337,27 @@ Shared infrastructure brings its own risks; for example, Ristenpart et al. showe
 
 ## 4.1 Task 1 - Lab isolation evidence
 
-The Kali run records the VM's interfaces and routes, the two namespaces and their routes, and shows that the untrusted zone has no route to the Internet or to the staff zone.
+The Kali run records the lab machine's interfaces and routes, the two namespaces and their routes, and shows that the untrusted zone has no route to the Internet or to the staff zone.
 
 <!-- KALI 01_lab_isolation.txt 60 -->
 
-<!-- KALIIMG vmware_network_adapter.png VMware network adapter setting of the Kali VM. -->
+The container itself was attached only to an internal Docker network, recorded on the Docker host before the run:
+
+<!-- EXCERPT evidence/kali/00_container_network.txt -->
+
+For completeness we also recorded the settings of our Kali VMware VM, which we tried first. It has one NAT adapter (a private VMware subnet, not bridged to the campus LAN), and shared folders and drag-and-drop are disabled, so the guest cannot read host files:
+
+<!-- EXCERPT evidence/kali/vm_settings.txt 2-13 -->
 
 ## 4.2 Task 2 - Nmap discovery, validation and exposure reduction
 
 **Baseline scan from the unauthorised zone:**
 
-<!-- KALI 03_nmap_before.txt /^(\$ |PORT|[0-9]+/tcp|Nmap scan|Not shown|Service Info|\|)/ 45 -->
+![Baseline full-port Nmap scan from cs_untrusted (rendered from evidence/kali/03_nmap_before.txt; real output, not a screen capture).](docs/media/nmap-before.png){width=15.5}
+
+The read-only NSE scripts added these details about the two web services:
+
+<!-- KALI 03_nmap_before.txt /^(\||[0-9]+/tcp +open +http)/ 30 -->
 
 **Validation of the weaknesses (non-destructive):**
 
@@ -356,17 +366,26 @@ The Kali run records the VM's interfaces and routes, the two namespaces and thei
 Table: Attack-surface table for the CampusShield lab target
 | Asset / service | Evidence | Possible threat | Vulnerability | CIA impact | Risk | Recommended action |
 |---|---|---|---|---|---|---|
-| TCP 5000 CampusShield portal (Werkzeug HTTP), baseline = vulnerable build | Nmap `-sV` service and version; SQLi test returned all attendance rows (`04_validation.txt`){{K}} | Student or outsider reads all records and password hashes | SQL injection in `/attendance`, reflected XSS in `/search`, cleartext HTTP, reachable from every zone | C: High, I: Medium | **Critical** | Deploy secure build, restrict to authorised zone, run as unprivileged user, use TLS |
-| TCP 8000 Python http.server "backup share" | Directory listing shows `campushield.db`; `HEAD` returns 200 with the file size (`04_validation.txt`){{K}} | Anyone downloads the whole database and the lab credential file | Unauthenticated directory listing of the data folder; service not needed | C: High | **Critical** | Remove the service; never publish the data folder |
-| Any other open port found by the scan | `03_nmap_before.txt`{{K}} | Depends on service | None claimed without evidence | - | Low / informational | Not needed for the demo: block with the firewall or disable |
+| TCP 5000 CampusShield portal - `Werkzeug httpd 3.1.9 (Python 3.14.10)`, baseline = vulnerable build running as root on 0.0.0.0 | Nmap: `open`, `syn-ack`, version above. From the untrusted zone a student login worked and `BCS210' OR '1'='1` returned **360 rows** (`04_validation.txt`) | A student or an outsider on an unauthorised network reads every student's records and the password hashes | SQL injection in `/attendance`, reflected XSS in `/search`, plain HTTP, reachable from a zone that has no business using it, version in the `Server` header | C: High, I: Medium | **Critical** | Deploy the secure build, allow only the staff zone, run as the unprivileged `cs_app`, serve over TLS |
+| TCP 8000 `SimpleHTTPServer 0.6` (Python `http.server`) "backup share" | NSE `http-title: Directory listing for /`; the listing links `campushield.db` and `lab_credentials.txt`; `HEAD /campushield.db` -> `200 OK`, `Content-Length: 61440` (`04_validation.txt`) | Anyone who can reach the port downloads the whole database and the file with the lab account passwords | Unauthenticated directory listing of the data folder; the service is not needed by the portal at all | C: High | **Critical** | Remove the service; never publish the data folder |
+| The other 65,533 TCP ports | `Not shown: 65533 closed tcp ports (reset)` | - | None: nothing is listening, so there is nothing to attack | - | None | Keep the default-deny firewall so new services are not exposed by accident |
 
-**The same scan after hardening, and from the authorised zone:**
+**The same scan after hardening, from both zones:**
 
-<!-- KALI 07_nmap_after.txt /^(\$ |PORT|[0-9]+/tcp|Nmap scan|Not shown|All [0-9]+ scanned|Chain|pkts| +[0-9]+ +[0-9]+[KM]? +(ACCEPT|LOG|DROP))/ 40 -->
+![The same Nmap command after hardening, from the untrusted zone and from the staff zone (rendered from evidence/kali/07_nmap_after.txt).](docs/media/nmap-after.png){width=15.5}
 
-<!-- KALIIMG kali_nmap_before.png Terminal screenshot - Nmap before hardening. -->
+The packet counters of the firewall chain after the scans show how much traffic each rule matched:
 
-<!-- KALIIMG kali_nmap_after.png Terminal screenshot - Nmap after hardening. -->
+<!-- KALI 07_nmap_after.txt /^(Chain|.*pkts|\s*[0-9]+[KM]?\s+[0-9]+[KM]?\s+(ACCEPT|LOG|DROP))/ 12 -->
+
+Table: Nmap before and after hardening (same command, `-n -Pn -sS -sV -p- -T4 --max-retries 2 --min-rate 1500 --reason`)
+| Scan | TCP 5000 (portal) | TCP 8000 (backup share) | Other 65,533 ports | Scan time |
+|---|---|---|---|---|
+| Before, from cs_untrusted | open - Werkzeug httpd 3.1.9, vulnerable build | open - SimpleHTTPServer 0.6, directory listing | closed (RST) | 6.98 s |
+| After, from cs_untrusted | filtered (no response) | filtered (no response) | filtered (no response) | 87.90 s |
+| After, from cs_staff | open - Werkzeug httpd 3.1.9, secure build | filtered | filtered | 88.26 s |
+
+The comparison shows the two controls separately. Port 8000 disappears from every zone because the service was stopped; it shows as "filtered" rather than "closed" only because the firewall now drops everything that is not allowed. Port 5000 is still there for the staff zone, which needs it, but the untrusted zone can no longer see it at all, so the SQL injection test that returned 360 rows from that zone in the baseline is no longer even reachable. The after-scans take longer only because dropped probes get no answer and Nmap has to wait for each one.
 
 ## 4.3 Task 3 - Authentication and cryptography results
 
@@ -376,7 +395,7 @@ Table: Attack-surface table for the CampusShield lab target
 
 PBKDF2 with 600,000 iterations was about 333,878 times slower per guess than SHA-256 on the same laptop (4.56 versus 1,521,094 hashes per second). The same password hashed twice gave two different stored values because of the random salt, and verification returned True only for the exact password.
 
-**Login controls and RBAC.** Table 9 is the access matrix measured with the Flask test client on the secure build. Each role reaches only its own pages; everything else returns 403, and anonymous requests are redirected to the login page.
+**Login controls and RBAC.** Table 10 is the access matrix measured with the Flask test client on the secure build. Each role reaches only its own pages; everything else returns 403, and anonymous requests are redirected to the login page.
 
 Table: Measured RBAC matrix (HTTP status codes; 200 = allowed, 403 = denied, 302 = redirected to login)
 | User (role) | /admin/users | /admin/audit | /students | /search | /registrar/attendance | /attendance |
@@ -464,31 +483,43 @@ The analysis found 9 warning signs. The defences we recommend are: **SPF** to li
 
 **Network re-test from the lab zones:**
 
-<!-- KALI 08_app_retest.txt 20 -->
+<!-- KALI 08_app_retest.txt /^(login|6 row|0 row|Course code|\$ ip netns)/ 12 -->
+
+Over the network, from the authorised zone, the secure build answered the normal query with the student's 6 rows and rejected the injection string (0 rows). Combined with the firewall result (Section 4.5), the original attack path - an unauthorised zone reaching a vulnerable query - is now closed at two layers.
 
 ## 4.5 Task 5 - Operations, privacy and monitoring results
 
 **Linux users, groups and permissions (before and after):**
 
-<!-- KALI 05_linux_permissions.txt /^(\$ |=>|uid=|students_readable|[0-9]+$|.*Permission denied|.*denied|BEFORE|AFTER|-rw|drw)/ 60 -->
+![Least-privilege layout and the authorised / unauthorised access tests (rendered from evidence/kali/05_linux_permissions.txt).](docs/media/linux-permissions.png){width=15.5}
+
+<!-- KALI 05_linux_permissions.txt /^(uid=|\$ runuser|=>|[0-9]+$|.*Permission denied)/ 40 -->
+
+In the baseline the database file was mode 666, so the unprivileged `cs_student` OS account could open it directly with `sqlite3` and count all 20 student records, completely bypassing the portal and its RBAC. The log file was already 644 because the portal had created it, so the student could not write to it even in the baseline; we report that as we found it rather than as a fixed problem. After the change, `cs_registrar` could still read the database through the `cs_records` group, while `cs_student` was denied. Only the service account could read the credentials file (even `cs_registrar` was denied), and only `cs_admin` (group `cs_audit`) could read the log; `cs_registrar` was denied, which is the separation of duties from our policy. Two further OS hardening steps are recommended in Section 5.4.
 
 **Host firewall - initial state, rules and connectivity checks:**
 
-<!-- KALI 06_firewall.txt /^(\$ |-A|-N|-P|staff|untrusted|=>|.*succeeded|.*Connection)/ 40 -->
+<!-- KALI 06_firewall.txt /^(\$ iptables|-A|-N|-P|LISTEN|cs_app|staff|untrusted|=>|nc:)/ 40 -->
+
+Before the change the INPUT policy was ACCEPT with no rules. With the chain applied, the staff zone received HTTP 200 from the portal, while the same request from the untrusted zone timed out (HTTP code 000). Even from the staff zone, ports 8000 and 22 timed out, because only TCP 5000 is allowed. The portal now runs as `cs_app` instead of root, and port 8000 is no longer listening.
 
 **Firewall removed, then re-applied:**
 
 <!-- KALI 09_firewall_removed.txt 20 -->
 
-<!-- KALIIMG kali_firewall_checks.png Terminal screenshot - allowed and blocked connections. -->
+![Firewall rules and the allowed / blocked connection checks (rendered from evidence/kali/06_firewall.txt and 09_firewall_removed.txt).](docs/media/firewall-checks.png){width=15.5}
 
 **Traffic capture (HTTP versus HTTPS):**
 
-<!-- KALI 10_traffic_capture.txt /^(\$ tshark|frame|[0-9]+\s|.*<->|HTTP requests|Filter)/ 40 -->
+<!-- KALI 10_traffic_capture.txt /^(10\.10\.60\.10:.*<->)/ 6 -->
 
-<!-- KALIIMG wireshark_http_post.png Wireshark view of the captured HTTP login POST. -->
+TShark 4.6 printed the HTTP body as hex in the run itself, and did not recognise TLS on port 5000, so we read the two saved `.pcap` files again with the right decoding (no new traffic was captured):
 
-In terms of CIA, the HTTP capture is a confidentiality problem: anyone who can see the traffic can read the form fields, including the username and password, and could also change the traffic in transit (integrity). With TLS the capture should contain only the handshake and encrypted "Application Data" records, so the content is protected. The self-signed certificate is fine for the lab, but in production a certificate from a trusted CA is needed, otherwise users learn to click through warnings.
+<!-- EXCERPT evidence/kali/10c_capture_decode.txt 3-26 -->
+
+![tshark reading the two capture files: the HTTP login POST with readable form fields, then the HTTPS capture with only TLS records (rendered from evidence/kali/10_traffic_capture.txt).](docs/media/traffic-capture.png){width=15.5}
+
+In terms of CIA, the HTTP capture is a confidentiality problem: anyone who can see the traffic can read the form fields, including the username and password, and could also change the traffic in transit (integrity). With TLS the capture contained only the TLS 1.3 handshake (Client Hello, Server Hello with cipher suite TLS_AES_256_GCM_SHA384) and encrypted "Application Data" records; TShark could read 0 HTTP requests or form fields from it, so the content is protected in transit. The self-signed certificate is fine for the lab, but in production a certificate from a trusted CA is needed, otherwise users learn to click through warnings.
 
 **Monitoring - synthetic attack log:**
 
@@ -500,9 +531,9 @@ In terms of CIA, the HTTP capture is a confidentiality problem: anyone who can s
 
 **Monitoring - Kali run (controlled burst from the staff zone):**
 
-<!-- KALI 11_monitoring.txt /ALERT|attempt|ACCOUNT_LOCKED|CS-FW-DROP|failed logins found/ 20 -->
+![The controlled burst of wrong passwords from the staff zone and the detector's alert on the real Kali portal log (rendered from evidence/kali/11_monitoring.txt).](docs/media/kali-monitoring-alert.png){width=15.5}
 
-The script raised the expected brute-force and spray alerts on the synthetic log and ignored the single typo. On the real portal log it detected our own lockout test (6 failed or blocked attempts from 127.0.0.1 within one second against `s2026002`). It missed the planted slow attack (4 failures, one every 20 minutes) with the default rule. Changing the rule to 4 failures in 90 minutes caught it but also produced 2 extra alerts (`evidence/monitoring/detect_app_log_tuned_4in90min_output.txt`), which is the usual trade-off between sensitivity and noise. Other limitations: attacks spread over many IPs, an attacker with root access could edit the log (logs should be forwarded to another host), clock problems, and the script runs on demand rather than in real time (cron, fail2ban or a SIEM would be used in production).
+The script raised the expected brute-force and spray alerts on the synthetic log and ignored the single typo. In the Kali run, six wrong passwords for `s2026002` from the staff zone locked the account after the fifth, and the detector raised `BRUTE_FORCE ip=10.10.60.10 failures=8` from the real portal log (the two other failures were the wrong-password logins used for the traffic captures). On the real portal log it detected our own lockout test (6 failed or blocked attempts from 127.0.0.1 within one second against `s2026002`). It missed the planted slow attack (4 failures, one every 20 minutes) with the default rule. Changing the rule to 4 failures in 90 minutes caught it but also produced 2 extra alerts (`evidence/monitoring/detect_app_log_tuned_4in90min_output.txt`), which is the usual trade-off between sensitivity and noise. Other limitations: attacks spread over many IPs, an attacker with root access could edit the log (logs should be forwarded to another host), clock problems, and the script runs on demand rather than in real time (cron, fail2ban or a SIEM would be used in production).
 
 **Privacy - before and after:**
 
@@ -532,11 +563,11 @@ Table: Risk ratings before and after the controls
 |---|---|---|---|---|---|
 | SQL injection in attendance lookup | C, I | **Critical** | Parameterised query + allow-list | **Low** | Fixed and re-tested; other queries were also written with parameters, but new code could reintroduce it |
 | Reflected XSS in search | C, I | **High** | Output encoding + CSP + other headers | **Low** | Re-tested in a real browser; stored XSS and other pages were not separately tested |
-| Unneeded backup share on :8000 | C | **Critical** | Service removed | **Low**{{K}} | Removed; risk returns only if someone starts it again (configuration drift) |
-| Portal reachable from every zone | C, A | **High** | Host firewall: staff zone only | **Low**{{K}} | Insiders in the staff zone can still reach it, so app-level controls still matter |
-| Cleartext HTTP login | C, I | **High** | TLS (lab: self-signed) | **Medium**{{K}} | Needs a trusted certificate and HTTPS-only redirect in production |
+| Unneeded backup share on :8000 | C | **Critical** | Service removed | **Low** | Removed; risk returns only if someone starts it again (configuration drift) |
+| Portal reachable from every zone | C, A | **High** | Host firewall: staff zone only | **Low** | Insiders in the staff zone can still reach it, so app-level controls still matter |
+| Cleartext HTTP login | C, I | **High** | TLS (lab: self-signed) | **Medium** | Needs a trusted certificate and HTTPS-only redirect in production |
 | Weak passwords / fast hashes / no lockout | C | **High** | Policy, PBKDF2 + salt, 5-try lockout | **Low-Medium** | Lockout can be abused to lock real users out (availability); no MFA yet |
-| Excessive file permissions, app as root | C, I | **High** | cs_app service account, 640/750, groups | **Low**{{K}} | Root can still read everything; full-disk encryption not applied |
+| Excessive file permissions, app as root | C, I | **High** | cs_app service account, 640/750, groups | **Low** | Root can still read everything; full-disk encryption not applied |
 | No alerting on failed logins | I | **Medium** | Detection script + audit log | **Low-Medium** | Slow and distributed attacks can stay under the threshold |
 | Re-identifiable student dataset | C | **High** | Suppression, pseudonymisation, generalisation | **Medium** | k = 2 only; two groups lack scholarship diversity; pseudonyms reversible with the key |
 | Phishing / spoofed sender | C | **High** | SPF, DKIM, DMARC, banners, training (recommended) | **Medium** | Recommended, not deployed; lookalike domains still need user checks |
@@ -552,9 +583,9 @@ Table: Before / after scorecard for CampusShield
 | Passwords | 7 of 12 legacy passwords cracked in 0.003 s, identical hashes | Policy, PBKDF2-600k + salt | `password_audit_output.txt` | Different hash per user, ~333,878x slower guesses | Predictable passwords that pass the rules |
 | Online guessing | Unlimited attempts | Lockout after 5 failures for 15 min | `auth_rbac_output.txt`, lockout screenshots | Correct password refused while locked | Lockout abuse; no MFA |
 | Data at rest | CSV readable by anyone with the file | AES-256-GCM + SHA-256 reference hash | `aes_gcm_output.txt`, `hash_output.txt` | Ciphertext unreadable; tampering detected | Key stored as a local file (KMS in production) |
-| Network exposure | :5000 and :8000 open to the untrusted zone | Remove :8000, iptables staff-only rule | `03_nmap_before.txt` vs `07_nmap_after.txt`{{K}} | Untrusted zone should see no open ports{{K}} | Insiders in the staff zone |
-| OS permissions | DB 666, folders 777, app as root | Service account, groups, 640/750 | `05_linux_permissions.txt`{{K}} | Unauthorised account denied{{K}} | Root compromise |
-| Traffic | Login form readable in capture | TLS | `10_traffic_capture.txt`, pcaps{{K}} | Only encrypted records{{K}} | Self-signed certificate in the lab |
+| Network exposure | :5000 and :8000 open to the untrusted zone; 360 rows via SQLi from there | Remove :8000, iptables staff-only rule | `03_nmap_before.txt` vs `07_nmap_after.txt` | Untrusted zone: all 65,535 ports filtered; staff zone: only :5000 | Insiders in the staff zone |
+| OS permissions | DB 666 (cs_student read all 20 records), folders 777, app as root | Service account, groups, 640/750 | `05_linux_permissions.txt` | cs_student denied; registrar denied logs; app runs as cs_app | Root compromise |
+| Traffic | Login form fields readable in the HTTP capture | TLS 1.3 | `10_traffic_capture.txt`, `10c_capture_decode.txt`, pcaps | 0 readable requests; only TLS records | Self-signed certificate in the lab |
 | Monitoring | No alerts | Detection script, audit log | Detector outputs (synthetic and real logs) | Brute force and spray alerted | Slow/distributed attacks |
 | Privacy | 100% of records unique | Suppression, HMAC pseudonyms, generalisation | `privacy_output.txt`, chart | 0% unique, k = 2, max risk 50% | Homogeneous groups; pseudonymisation only |
 | Phishing | No sender checks | Analysis + SPF/DKIM/DMARC recommendations | `eml_analysis_output.txt` | 9 warning signs identified | Depends on users and mail-server setup |
@@ -587,15 +618,15 @@ Ordered by priority:
 
 ## 5.5 Limitations of our testing
 
-The application and most exercises were run on a Windows laptop against 127.0.0.1, and the network and OS exercises in one Kali VM with network namespaces instead of separate physical machines. Speeds in the password test are from one laptop and change between runs. The wordlist and the datasets are small on purpose. The phishing message was analysed, not delivered, so we did not test real mail filters. Results from the Kali VM depend on its configuration, so other services running in that VM will also appear in the scans.
+The application and most exercises were run on a Windows laptop against 127.0.0.1, and the network and OS exercises in one Kali Linux container with network namespaces instead of separate physical machines. A container shares the Docker host's kernel, so it is weaker isolation than a full VM; the internal-only Docker network and the absence of published ports are what kept the deliberately weak services inside the lab. Speeds in the password test are from one laptop and change between runs. The wordlist and the datasets are small on purpose. The phishing message was analysed, not delivered, so we did not test real mail filters. Results from the Kali VM depend on its configuration, so other services running in that VM will also appear in the scans.
 
 # 6. Conclusion
 
 We built CampusShield as a working Flask and SQLite portal with three roles and synthetic data, then used it to go through the full attack, defend and verify loop. The clearest results were in the application. One crafted course code let a student read all 360 attendance records of 20 students and every password hash, and a crafted link ran script in the registrar's browser. After switching to parameterised queries, output encoding and security headers, the same tests failed while normal use still worked.
 
-The cryptography exercises showed what each technique is good for. Salted PBKDF2 made each password guess about 330,000 times more expensive than plain SHA-256. AES-256-GCM kept the CSV confidential and detected a one-bit change. The SHA-256 hash detected a one-character edit. The Caesar cipher and steganography mainly showed their limits. The privacy work showed that removing names is not enough when every record is unique, and that each extra level of protection costs data. The Kali lab script brings the network, firewall, permission and traffic-capture tests together in one repeatable run, with the same Nmap scan before and after hardening.
+The cryptography exercises showed what each technique is good for. Salted PBKDF2 made each password guess about 330,000 times more expensive than plain SHA-256. AES-256-GCM kept the CSV confidential and detected a one-bit change. The SHA-256 hash detected a one-character edit. The Caesar cipher and steganography mainly showed their limits. The privacy work showed that removing names is not enough when every record is unique, and that each extra level of protection costs data. On Kali, the same full-port Nmap scan went from two open web services (one listing the database file) to nothing visible from the untrusted zone, the student OS account lost direct access to the database, and the login form went from readable in a packet capture to TLS-only.
 
-The main lesson for us is that every control needs a test that could fail. Several things we expected to be fine needed fixing during the project, including an early version of our XSS test that showed the session cookie only because of how the test loaded it into the browser. The remaining risks are listed in Section 5.3, and MFA, HTTPS everywhere and central logging would be the next steps.
+The main lesson for us is that every control needs a test that could fail. Several things we expected to be fine needed fixing during the project, including an early version of our XSS test that showed the session cookie only because of how the test loaded it into the browser, and our first Nmap runs in the lab, which stalled on DNS lookups and then on dropped probes until we added `-n` and `--min-rate`. The remaining risks are listed in Section 5.3, and MFA, HTTPS everywhere and central logging would be the next steps.
 
 # 7. References
 
@@ -626,14 +657,14 @@ Table: Where the evidence for each CLO and rubric item is
 | CLO / rubric item | Evidence in this report | Files in the repository |
 |---|---|---|
 | CLO-1 policy, models, mechanisms | Section 3.1 (architecture, roles, assets, threat register, policy, RBAC) | `diagrams/architecture.png`, `app/web.py` (`require_roles`) |
-| CLO-1 lab isolation | Section 4.1{{K}} | `kali/run_kali_lab.sh`, `evidence/kali/01_lab_isolation.txt` |
-| CLO-2 Nmap, ports, CIA mapping | Sections 3.2, 4.2, Table 8{{K}} | `evidence/kali/03_*`, `04_*`, `07_*` |
+| CLO-1 lab isolation | Section 4.1 | `kali/docker/`, `evidence/kali/00_container_network.txt`, `01_lab_isolation.txt`, `vm_settings.txt` |
+| CLO-2 Nmap, ports, CIA mapping | Sections 3.2, 4.2, Table 8 | `evidence/kali/03_*`, `04_*`, `07_*` |
 | CLO-3 CSV dataset, AES, hash verified | Sections 3.3, 4.3 | `data/synthetic/campus_records.csv`, `demonstrations/cryptography/`, `evidence/cryptography/` |
 | CLO-3 passwords, Caesar, steganography | Sections 3.3, 4.3 | `demonstrations/authentication/`, `demonstrations/steganography/` |
 | CLO-4 vulnerable script, attack, patch | Sections 3.4, 4.4 | `app/web.py` (both builds), `demonstrations/sql_injection/`, `demonstrations/web_security/`, `evidence/screenshots/` |
 | CLO-4 phishing / e-mail spoofing | Sections 3.4, 4.4 | `demonstrations/email_simulation/` |
 | CLO-4 SQLite, RBAC, SQLi prevention | Sections 3.4, 4.3, 4.4 | `app/db.py`, `evidence/authentication/auth_rbac_output.txt` |
-| CLO-5 traffic capture, firewall applied/removed, CIA | Sections 3.5, 4.5{{K}} | `evidence/kali/06_*`, `09_*`, `10_*`, `*.pcap` |
+| CLO-5 traffic capture, firewall applied/removed, CIA | Sections 3.5, 4.5 | `evidence/kali/06_*`, `09_*`, `10_*`, `10c_*`, `*.pcap` |
 | CLO-5 hardening, monitoring | Sections 3.5, 4.5, 5.4 | `evidence/kali/05_*`, `monitoring/`, `evidence/monitoring/` |
 | CLO-5 privacy and cloud | Sections 3.5, 4.5 | `privacy/`, `evidence/privacy/`, `diagrams/cloud_architecture.png` |
 
@@ -656,6 +687,6 @@ python privacy/make_privacy_dataset.py && python privacy/anonymise.py
 python monitoring/generate_synthetic_events.py
 bash monitoring/detect_failed_logins.sh monitoring/sample_logs/campushield_synthetic.log 5 10
 python demonstrations/email_simulation/analyse_eml.py
-sudo bash kali/run_kali_lab.sh                             # in the Kali VM
+bash kali/docker/run_lab_container.sh                      # Kali lab in an isolated container (or: sudo bash kali/run_kali_lab.sh in a Kali VM)
 python report/build_report.py                              # rebuild this report (DOCX + PDF)
 ```

@@ -121,6 +121,19 @@ function kaliLines(file, regex, max) {
     .map((l) => l.slice(0, 70));
 }
 
+// two-column "evidence + big number" layout used on the Kali slides
+function evidencePair(s, left, right) {
+  [left, right].forEach((c, i) => {
+    const x = i === 0 ? 0.6 : 6.85;
+    pill(s, c.pill, x, 1.3, c.color, c.pillW || 2.6);
+    img(s, c.img, x, 1.8, 5.9, 2.75, c.pill);
+    s.addText(c.big, { x, y: 4.75, w: 5.9, h: 0.75, fontFace: THEME.headFontFace, fontSize: 36, bold: true,
+      color: c.color, margin: 0, isTextBox: true });
+    s.addText(c.small, { x, y: 5.5, w: 5.9, h: 1.0, fontSize: 14, color: C.text1, margin: 0, valign: "top",
+      isTextBox: true });
+  });
+}
+
 // ================================================================== 1 title
 pres.addSection({ title: "Introduction" });
 {
@@ -161,7 +174,7 @@ pres.addSection({ title: "Introduction" });
   img(s, "diagrams/attack_defend_verify.png", 0.6, 3.95, 12.15, 2.9, "method diagram");
   s.addNotes("ZUHAIR. Our method is the loop on the right. Example: the SQL injection test exposed 360 " +
     "attendance rows on the vulnerable build and 0 on the fixed build, with the normal query still working. " +
-    "Everything runs on synthetic data, on localhost or inside the Kali VM, never against a real system.");
+    "Everything runs on synthetic data, on localhost or inside the isolated Kali lab, never against a real system.");
 }
 
 // ================================================================== 3 architecture
@@ -224,36 +237,19 @@ pres.addSection({ title: "Blueprint" });
 pres.addSection({ title: "Network" });
 {
   const s = content("Network", "Network discovery and exposure reduction", "Ilyass");
-  img(s, "diagrams/lab_network.png", 0.5, 1.3, 7.2, 4.4, "lab network diagram");
-  codeBox(s, [
-    "# from the untrusted zone, before and after",
-    "ip netns exec cs_untrusted nmap -Pn -sS -sV \\",
-    "   -p- -T4 --max-retries 2 --reason 10.10.50.1",
-  ], 0.6, 5.85, 7.0, 0.95, 11);
-  const before = kaliLines("03_nmap_before.txt", /^[0-9]+\/tcp/, 5);
-  const after = kaliLines("07_nmap_after.txt", /^[0-9]+\/tcp|All [0-9]+ scanned|ignored states/, 5);
-  card(s, 8.0, 1.35, 4.75, 5.45);
-  if (before && after) {
-    textBlock(s, [{ text: "Before (untrusted zone)", options: { bold: true, color: C.accent3 } }], 8.15, 1.45, 4.5, 0.4);
-    codeBox(s, before, 8.15, 1.9, 4.45, 1.7, 10);
-    textBlock(s, [{ text: "After hardening", options: { bold: true, color: C.accent2 } }], 8.15, 3.75, 4.5, 0.4);
-    codeBox(s, after, 8.15, 4.2, 4.45, 1.7, 10);
-  } else {
-    textBlock(s, [
-      { text: "What the scan compares", options: { bold: true, fontSize: 16, color: C.text2, breakLine: true } },
-      { text: ":5000 portal - required, but only for the staff zone", options: { bullet: true, breakLine: true } },
-      { text: ":8000 backup share - unnecessary, publishes the database", options: { bullet: true, breakLine: true } },
-      { text: "Safe validation: directory listing + HEAD of campushield.db, read-only Metasploit scanners", options: { bullet: true, breakLine: true } },
-      { text: "Control: stop :8000, iptables allows only 10.10.60.0/24 to :5000, re-run the same scan", options: { bullet: true, breakLine: true } },
-      { text: "Real results: run sudo bash kali/run_kali_lab.sh (live demo)", options: { bold: true, color: C.accent3 } },
-    ], 8.15, 1.45, 4.5, 5.25, { fontSize: 14, paraSpaceAfter: 8 });
-  }
-  s.addNotes("ILYASS. The scan runs from a network namespace that represents an unauthorised zone, " +
-    "against one address inside the Kali VM, so nothing leaves the lab. -p- scans all 65,535 ports and -sV " +
-    "identifies services and versions. Port 5000 is needed but should only be reachable from the staff " +
-    "zone; port 8000 is a quick web server someone left publishing the data folder, so it is unnecessary. " +
-    "We validated it with a HEAD request only, so no data was downloaded. After stopping it and adding the " +
-    "firewall rule we ran exactly the same command again and compare the two outputs.");
+  evidencePair(s,
+    { pill: "BEFORE hardening", color: C.accent3, img: "docs/media/slide-nmap-before.png", big: "2 open ports",
+      small: "From the untrusted zone: 5000 (vulnerable build) and 8000, a backup share listing campushield.db. SQL injection returned 360 rows." },
+    { pill: "AFTER (same Nmap command)", color: C.accent2, pillW: 3.2, img: "docs/media/slide-nmap-after.png", big: "0 visible",
+      small: "Untrusted zone: all 65,535 ports filtered. Staff zone: only 5000, now the secure build. SQL injection re-test: 0 rows." });
+  s.addNotes("ILYASS. Real Kali run: Kali Linux kali-rolling with Nmap 7.99, in a container on an internal-only " +
+    "network. The scan runs from a namespace that represents an unauthorised zone. -p- covers all 65,535 ports, " +
+    "-sV identifies versions, -n skips DNS because the lab has no DNS server. Before: the portal on 5000 and a " +
+    "quick backup share on 8000 that lists the database and the credentials file; we only sent a HEAD request, " +
+    "so no data was downloaded, and the SQL injection still worked from this zone. After stopping 8000 and " +
+    "adding the firewall rule we ran exactly the same command again: from the untrusted zone all 65,535 ports are " +
+    "filtered, from the staff zone only 5000 is open, now the secure build running as cs_app, and port 8000 is gone. " +
+    "The SQL injection re-test from the staff zone returned 0 rows while the normal query still returned 6.");
 }
 
 // ================================================================== 6 auth + crypto
@@ -365,73 +361,33 @@ pres.addSection({ title: "Crypto and app" });
 pres.addSection({ title: "Operations" });
 {
   const s = content("Operations", "Linux hardening and host firewall", "Ilyass");
-  const H = (t) => ({ text: t, options: { bold: true, color: C.background1, fill: { color: HEX.dk2 } } });
-  s.addTable([
-    [H("Path"), H("Owner : group"), H("Mode")],
-    ["data/campushield.db", "cs_app : cs_records", "640"],
-    ["data/ folder", "cs_app : cs_records", "750"],
-    ["lab_credentials.txt", "cs_app : cs_app", "600"],
-    ["logs/campushield.log", "cs_app : cs_audit", "640"],
-    ["app/, scripts/", "root : root", "755"],
-  ], { x: 0.6, y: 1.35, w: 6.0, colW: [2.4, 2.6, 1.0], fontSize: 13, color: C.text1,
-       border: { type: "solid", pt: 0.75, color: "C9CFD9" }, rowH: 0.45 });
-  const perm = kaliLines("05_linux_permissions.txt", /=>/, 6);
-  textBlock(s, perm ? [{ text: "Kali result: ", options: { bold: true } }, { text: perm.join("  |  ") }] : [
-    { text: "Test with runuser: ", options: { bold: true } },
-    { text: "cs_registrar can read the DB, cs_student is denied, only cs_admin reads logs. Baseline was 666/777 and the app ran as root." },
-  ], 0.6, 4.25, 6.0, 1.3, { fontSize: 13 });
-  codeBox(s, [
-    "iptables -N CS_LAB_IN",
-    "-A CS_LAB_IN -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT",
-    "-A CS_LAB_IN -s 10.10.60.0/24 -p tcp --dport 5000 -j ACCEPT",
-    "-A CS_LAB_IN -j LOG --log-prefix \"CS-FW-DROP \"",
-    "-A CS_LAB_IN -j DROP",
-  ], 6.9, 1.35, 5.85, 1.95, 11);
-  pill(s, "staff zone -> :5000 allowed", 6.9, 3.5, C.accent2, 2.85);
-  pill(s, "untrusted -> :5000 dropped", 9.9, 3.5, C.accent3, 2.85);
-  card(s, 6.9, 4.1, 5.85, 1.9);
-  textBlock(s, [
-    { text: "What a host firewall test cannot show", options: { bold: true, color: C.text2, breakLine: true } },
-    { text: "It filters traffic that reaches this host. It says nothing about free wall ports, MAC spoofing or attacks between machines on the same switch. That needs switch port security, 802.1X and VLANs on real hardware." },
-  ], 7.0, 4.2, 5.65, 1.75, { fontSize: 13 });
-  s.addNotes("ILYASS. Everything here is done by kali/run_kali_lab.sh inside the VM. Before: the database " +
-    "was mode 666, so the cs_student OS account could read all students. After: the service account owns " +
-    "the files, registrars can read the DB through their group, students are denied, and only the audit " +
-    "group reads logs. The firewall chain only matches the two lab interfaces, so the VM's own network is " +
-    "untouched. We also remove the rules to show access comes back, then apply them again." +
-    (HAVE_KALI ? "" : " Results come from evidence/kali after the run."));
+  evidencePair(s,
+    { pill: "Least-privilege files", color: C.text2, img: "docs/media/slide-permissions.png", big: "20 → denied",
+      small: "cs_student read all 20 records while the DB was 666; after 640 with cs_app : cs_records it is denied. Registrars cannot read logs." },
+    { pill: "Host firewall", color: C.accent2, img: "docs/media/slide-firewall.png", big: "200 / blocked",
+      small: "Staff zone gets HTTP 200, untrusted zone times out. Rules removed: reachable again; re-applied: blocked. Says nothing about switch ports." });
+  s.addNotes("ILYASS. Before: the database was mode 666, so the cs_student OS account could read all 20 " +
+    "students. After: the service account cs_app owns the files, registrars can read the DB through the " +
+    "cs_records group, students are denied, only the audit group reads logs, and only cs_app can read the " +
+    "credentials file. Firewall: the staff zone gets HTTP 200, the untrusted zone times out, and other ports " +
+    "are blocked even from the staff zone. Removing the rules made the portal reachable from the untrusted " +
+    "zone again; re-applying them blocked it again. The rules only match the two lab interfaces.");
 }
 
 // ================================================================== 11 monitoring + capture
 {
   const s = content("Operations", "Monitoring and traffic capture", "Ilyass");
-  codeBox(s, [
-    "$ bash monitoring/detect_failed_logins.sh campushield_synthetic.log 5 10",
-    "ALERT BRUTE_FORCE ip=10.10.50.66 failures=8 between 10:15:00 and 10:16:45",
-    "ALERT PASSWORD_SPRAY ip=10.10.50.77 distinct_users=4",
-    "",
-    "$ bash monitoring/detect_failed_logins.sh campushield_real_app.log 5 10",
-    "ALERT BRUTE_FORCE ip=127.0.0.1 failures=6 users=s2026002",
-  ], 0.6, 1.35, 7.4, 1.95, 11);
-  textBlock(s, bullets([
-    "Rule: 5+ failures from one IP in 10 minutes, or 3+ usernames from one IP",
-    "Second alert came from the real portal log of our lockout test",
-    "Missed: a slow attack, 1 try every 20 min; tuning to 4 in 90 min caught it but added 2 extra alerts",
-  ], 15), 0.6, 3.55, 7.4, 3.0);
-  card(s, 8.3, 1.35, 4.45, 5.3);
-  const cap = kaliLines("10_traffic_capture.txt", /HTTP requests readable|POST/, 3);
-  textBlock(s, [
-    { text: "tshark on the staff interface", options: { bold: true, fontSize: 16, color: C.text2, breakLine: true } },
-    { text: "HTTP login: the form fields are readable in the capture (confidentiality and integrity risk)", options: { bullet: true, breakLine: true } },
-    { text: "HTTPS login (openssl self-signed cert): only TLS records", options: { bullet: true, breakLine: true } },
-    { text: "We log in with a deliberately wrong password, so no real lab password is captured", options: { bullet: true, breakLine: true } },
-    { text: cap ? "Kali: " + cap.join(" | ") : "pcaps: evidence/kali/http_login.pcap, https_login.pcap", options: { color: C.accent5, fontSize: 12 } },
-  ], 8.45, 1.5, 4.15, 5.0, { fontSize: 14, paraSpaceAfter: 8 });
-  s.addNotes("ILYASS. The portal logs every login failure, lockout and access denial with the source IP. " +
-    "Our script groups failures per IP in a sliding 10-minute window. On the synthetic log it caught the " +
-    "brute force and the password spray and ignored a normal typo; on the real log it caught our own " +
-    "lockout test. It missed the slow attack, which shows the threshold trade-off. For traffic, the HTTP " +
-    "capture shows the login form in clear text; with TLS only encrypted records are visible.");
+  evidencePair(s,
+    { pill: "Monitoring", color: C.accent3, img: "docs/media/slide-monitoring.png", big: "1 alert",
+      small: "Wrong passwords from the staff zone: account locked after 5, BRUTE_FORCE alert from the real log. A slow attack (1 try / 20 min) is missed." },
+    { pill: "Traffic capture", color: C.accent2, img: "docs/media/slide-capture.png", big: "0 readable",
+      small: "HTTP: the login form fields are readable in the pcap. HTTPS (TLS 1.3): only handshake and encrypted Application Data. Wrong password used." });
+  s.addNotes("ILYASS. In the Kali run we sent six wrong passwords for s2026002 from the staff zone. The " +
+    "portal locked the account after five and our script raised a BRUTE_FORCE alert from the real log. On the " +
+    "synthetic log it also caught a password spray and ignored a normal typo, but it missed the slow attack, " +
+    "which is the threshold trade-off. For traffic, tshark on the staff interface shows the HTTP POST with " +
+    "the form fields readable; after switching to HTTPS with a self-signed certificate, only TLS records are " +
+    "visible and no HTTP request can be read.");
 }
 
 // ================================================================== 12 privacy
@@ -496,7 +452,7 @@ pres.addSection({ title: "Conclusion" });
     ["Reflected XSS", "script ran in Edge", "shown as text, CSP sent"],
     ["Passwords", "7/12 cracked, same hashes", "salted PBKDF2, lockout"],
     ["Privacy", "100% records unique", "0% unique, k = 2"],
-    ["Network / OS", ":8000 open, files 666", HAVE_KALI ? "see Kali evidence" : "Kali run: kali/run_kali_lab.sh"],
+    ["Network / OS", ":5000 + :8000 open, DB 666", "untrusted: all filtered, DB 640"],
   ];
   const H = (t) => ({ text: t, options: { bold: true, color: C.text2, fill: { color: HEX.lt2 } } });
   const body = rows.map((r) => [
